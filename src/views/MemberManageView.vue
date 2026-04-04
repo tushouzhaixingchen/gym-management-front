@@ -123,8 +123,8 @@
         </el-form-item>
         <el-form-item label="性别" prop="gender">
           <el-radio-group v-model="formData.gender">
-            <el-radio :label="1">男</el-radio>
-            <el-radio :label="2">女</el-radio>
+            <el-radio :value="1">男</el-radio>
+            <el-radio :value="2">女</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="身份证号" prop="idCard">
@@ -146,8 +146,8 @@
         </el-form-item>
         <el-form-item label="会员卡类型" prop="cardType">
           <el-radio-group v-model="formData.cardType">
-            <el-radio label="period">期限卡</el-radio>
-            <el-radio label="count">次数卡</el-radio>
+            <el-radio value="period">期限卡</el-radio>
+            <el-radio value="count">次数卡</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="加入日期" prop="joinDate">

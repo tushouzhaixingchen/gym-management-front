@@ -201,11 +201,11 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="状态" prop="status">
-              <el-select v-model="formData.status" placeholder="请选择状态" style="width: 100%">
-                <el-option label="正常" :value="1" />
-                <el-option label="维修中" :value="2" />
-                <el-option label="报废" :value="3" />
-              </el-select>
+              <el-radio-group v-model="formData.status">
+                <el-radio :value="1">待处理</el-radio>
+                <el-radio :value="2">处理中</el-radio>
+                <el-radio :value="3">已完成</el-radio>
+              </el-radio-group>
             </el-form-item>
           </el-col>
         </el-row>

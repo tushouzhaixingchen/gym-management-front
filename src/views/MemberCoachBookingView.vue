@@ -83,7 +83,7 @@
     >
       <el-form
         ref="formRef"
-        :model="bookingForm"
+        :model="formData"
         :rules="formRules"
         label-width="120px"
       >
@@ -103,7 +103,7 @@
 
         <el-form-item label="选择门店" prop="storeId">
           <el-select
-            v-model="bookingForm.storeId"
+            v-model="formData.storeId"
             placeholder="请选择门店"
             style="width: 100%"
             @change="handleStoreChange"
@@ -119,7 +119,7 @@
 
         <el-form-item label="选择日期" prop="workDate">
           <el-date-picker
-            v-model="bookingForm.workDate"
+            v-model="formData.workDate"
             type="date"
             placeholder="选择日期"
             :disabled-date="disabledDate"
@@ -130,7 +130,7 @@
 
         <el-form-item label="选择时间段" prop="timeSlot" v-if="availableSlots.length > 0">
           <el-select
-            v-model="bookingForm.timeSlot"
+            v-model="formData.timeSlot"
             placeholder="请选择时间段"
             style="width: 100%"
           >
@@ -143,18 +143,18 @@
           </el-select>
         </el-form-item>
 
-        <el-form-item label="预约时长" prop="durationMinutes">
-          <el-radio-group v-model="bookingForm.durationMinutes">
-            <el-radio-button :label="30">30 分钟</el-radio-button>
-            <el-radio-button :label="60">60 分钟</el-radio-button>
-            <el-radio-button :label="90">90 分钟</el-radio-button>
-            <el-radio-button :label="120">120 分钟</el-radio-button>
+        <el-form-item label="预约时长" prop="duration">
+          <el-radio-group v-model="formData.duration">
+            <el-radio-button :value="30">30 分钟</el-radio-button>
+            <el-radio-button :value="60">60 分钟</el-radio-button>
+            <el-radio-button :value="90">90 分钟</el-radio-button>
+            <el-radio-button :value="120">120 分钟</el-radio-button>
           </el-radio-group>
         </el-form-item>
 
         <el-form-item label="预约目的" prop="purpose">
           <el-select
-            v-model="bookingForm.purpose"
+            v-model="formData.purpose"
             placeholder="请选择预约目的"
             style="width: 100%"
           >
@@ -168,7 +168,7 @@
 
         <el-form-item label="备注" prop="remark">
           <el-input
-            v-model="bookingForm.remark"
+            v-model="formData.remark"
             type="textarea"
             :rows="3"
             placeholder="请输入备注信息（可选）"
@@ -221,12 +221,12 @@ const selectedCoach = ref<any>(null);
 const formRef = ref();
 
 // 预约表单
-const bookingForm = reactive({
+const formData = reactive({
   storeId: null as number | null,
   coachId: null as number | null,
   workDate: '' as string,
   timeSlot: '' as string,
-  durationMinutes: 60,
+  duration: 60,
   purpose: '',
   remark: '',
 });
@@ -239,14 +239,14 @@ const formRules = reactive({
   storeId: [{ required: true, message: '请选择门店', trigger: 'change' }],
   workDate: [{ required: true, message: '请选择日期', trigger: 'change' }],
   timeSlot: [{ required: true, message: '请选择时间段', trigger: 'change' }],
-  durationMinutes: [{ required: true, message: '请选择时长', trigger: 'change' }],
+  duration: [{ required: true, message: '请选择时长', trigger: 'change' }],
   purpose: [{ required: true, message: '请选择预约目的', trigger: 'change' }],
 });
 
 // 计算价格
 const calculatePrice = computed(() => {
   const price = Number(selectedCoach.value?.price) || 200;
-  const duration = bookingForm.durationMinutes;
+  const duration = formData.duration;
   return (price * duration / 60).toFixed(2);
 });
 
@@ -375,30 +375,30 @@ const handleReset = () => {
 // 选择教练
 const handleSelectCoach = (coach: any) => {
   selectedCoach.value = coach;
-  bookingForm.coachId = coach.id;
-  bookingForm.storeId = coach.storeId;
+  formData.coachId = coach.id;
+  formData.storeId = coach.storeId;
   bookingVisible.value = true;
 };
 
 // 门店变化
 const handleStoreChange = () => {
   availableSlots.value = [];
-  bookingForm.workDate = '';
-  bookingForm.timeSlot = '';
+  formData.workDate = '';
+  formData.timeSlot = '';
 };
 
 // 日期变化 - 加载可用时间段
 const handleDateChange = async () => {
-  if (!bookingForm.coachId || !bookingForm.workDate) return;
+  if (!formData.coachId || !formData.workDate) return;
 
   try {
-    const dateStr = new Date(bookingForm.workDate).toISOString().split('T')[0];
+    const dateStr = new Date(formData.workDate).toISOString().split('T')[0];
     console.log('📅 请求日期:', dateStr);
-    console.log('🏀 教练 ID:', bookingForm.coachId);
+    console.log('🏀 教练 ID:', formData.coachId);
     
     // 🔧 临时方案：使用模拟数据，因为后端还没有实现这个接口
     // 实际项目中应该调用后端接口
-    // const res: any = await request.get(`/member/coaches/${bookingForm.coachId}/schedules`, {
+    // const res: any = await request.get(`/member/coaches/${formData.coachId}/schedules`, {
     //   params: { date: dateStr }
     // });
     
@@ -439,27 +439,27 @@ const submitBooking = async () => {
     if (!valid) return;
 
     try {
-      if (!bookingForm.timeSlot) {
+      if (!formData.timeSlot) {
         ElMessage.warning('请选择时间段');
         return;
       }
 
       // 🔧 修改：构建符合后端要求的预约数据
       // 解析时间段，例如 "14:00:00"
-      const startTime = bookingForm.timeSlot.includes(':') 
-        ? bookingForm.timeSlot 
-        : `${bookingForm.timeSlot}:00`;
+      const startTime = formData.timeSlot.includes(':') 
+        ? formData.timeSlot 
+        : `${formData.timeSlot}:00`;
       
       // 计算结束时间
-      const endTime = calculateEndTime(bookingForm.workDate, startTime, bookingForm.durationMinutes).split(' ')[1];
+      const endTime = calculateEndTime(formData.workDate, startTime, formData.duration).split(' ')[1];
 
       const bookingData = {
-        coachId: bookingForm.coachId,
-        storeId: bookingForm.storeId,
-        date: bookingForm.workDate,
+        coachId: formData.coachId,
+        storeId: formData.storeId,
+        date: formData.workDate,
         startTime: startTime,
         endTime: endTime,
-        note: bookingForm.remark || undefined,
+        note: formData.remark || undefined,
       };
 
       console.log('📤 提交预约数据:', bookingData);
@@ -494,13 +494,13 @@ const calculateEndTime = (date: string, startTime: string, duration: number) => 
 const handleDialogClose = () => {
   formRef.value?.resetFields();
   selectedCoach.value = null;
-  bookingForm.storeId = null;
-  bookingForm.coachId = null;
-  bookingForm.workDate = '';
-  bookingForm.timeSlot = '';
-  bookingForm.durationMinutes = 60;
-  bookingForm.purpose = '';
-  bookingForm.remark = '';
+  formData.storeId = null;
+  formData.coachId = null;
+  formData.workDate = '';
+  formData.timeSlot = '';
+  formData.duration = 60;
+  formData.purpose = '';
+  formData.remark = '';
   availableSlots.value = [];
 };
 

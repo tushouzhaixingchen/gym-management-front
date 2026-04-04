@@ -292,8 +292,8 @@
         </el-form-item>
         <el-form-item label="取消方">
           <el-radio-group v-model="cancelForm.cancelBy">
-            <el-radio :label="1">会员</el-radio>
-            <el-radio :label="2">管理员</el-radio>
+            <el-radio :value="1">会员</el-radio>
+            <el-radio :value="2">管理员</el-radio>
           </el-radio-group>
         </el-form-item>
       </el-form>

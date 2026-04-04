@@ -15,13 +15,26 @@ export interface UserState {
 }
 
 export const useUserStore = defineStore('user', {
-  state: (): UserState => ({
+  state: () => ({
     token: localStorage.getItem('token') || '',
     name: localStorage.getItem('name') || '',
-    role: (localStorage.getItem('role') as RoleType) || 'MEMBER',
-    userId: Number(localStorage.getItem('userId')) || undefined,
-    storeId: Number(localStorage.getItem('storeId')) || undefined,  // ✅ 从 localStorage 恢复
-    storeName: localStorage.getItem('storeName') || undefined  // ✅ 从 localStorage 恢复
+    role: localStorage.getItem('role') || 'MEMBER',
+    userId: (() => {
+      const userId = localStorage.getItem('userId')
+      return userId ? Number(userId) : undefined
+    })(),
+    // 🔧 关键修复：从 localStorage 重新读取，解决浏览器回退问题
+    storeId: (() => {
+      const storeIdStr = localStorage.getItem('storeId')
+      if (storeIdStr === null || storeIdStr === 'null') {
+        console.log('🔐 userStore 初始化 - localStorage storeId: null (超级管理员)')
+        return undefined  // 超级管理员
+      }
+      const storeId = Number(storeIdStr)
+      console.log('🔐 userStore 初始化 - localStorage storeId:', storeIdStr, '转换后:', storeId)
+      return storeId
+    })(),
+    storeName: localStorage.getItem('storeName') || undefined
   }),
 
   actions: {
@@ -34,28 +47,68 @@ export const useUserStore = defineStore('user', {
         });
 
         if ((res as any).code === 200 && (res as any).data) {
-          const { token, name, role, userId, storeId, storeName } = (res as any).data;
+          // 🔧 关键修复：先清除所有旧数据，再存储新数据
+          console.log('🔐 开始登录，清除旧数据...')
+          localStorage.removeItem('token')
+          localStorage.removeItem('name')
+          localStorage.removeItem('role')
+          localStorage.removeItem('userId')
+          localStorage.removeItem('storeId')
+          localStorage.removeItem('storeName')
 
-          this.token = token;
-          this.name = name || userInfo.account;
-          this.role = role || 'MEMBER';
-          this.userId = userId;
-          this.storeId = storeId;  // ✅ 存储 storeId
-          this.storeName = storeName;  // ✅ 存储 storeName
+          const userData = (res as any).data.userInfo || (res as any).data
+          
+          console.log('🔐 登录响应数据:', (res as any).data)
+          console.log('🔐 解析后的用户数据:', userData)
+          
+          const { token } = (res as any).data
+          const { id, account, realName, userType, roleId, storeId, storeName, avatar } = userData
 
-          localStorage.setItem('token', token);
-          localStorage.setItem('name', this.name);
-          localStorage.setItem('role', this.role);
-          if (userId) {
-            localStorage.setItem('userId', String(userId));
+          this.token = token
+          this.name = realName || account || userInfo.account
+          this.role = userType || 'MEMBER'
+          this.userId = id
+          this.storeId = storeId
+          this.storeName = storeName
+
+          console.log('🔐 存储到 userStore:', {
+            token: this.token ? '已设置' : '未设置',
+            name: this.name,
+            role: this.role,
+            userId: this.userId,
+            storeId: this.storeId,
+            storeName: this.storeName
+          })
+
+          localStorage.setItem('token', token)
+          localStorage.setItem('name', this.name)
+          localStorage.setItem('role', this.role)
+          if (id) {
+            localStorage.setItem('userId', String(id))
           }
-          if (storeId) {
-            localStorage.setItem('storeId', String(storeId));
+          
+          // 🔧 关键修复：超级管理员 storeId 为 null/undefined，普通管理员有值
+          if (storeId !== null && storeId !== undefined && storeId !== 0) {
+            localStorage.setItem('storeId', String(storeId))
+            this.storeId = storeId  // 🔧 同时更新 userStore
+            console.log('✅ 普通管理员，已存储 storeId:', storeId)
+          } else {
+            localStorage.removeItem('storeId')
+            this.storeId = undefined  // 🔧 超级管理员，设置为 undefined
+            console.log('✅ 超级管理员，已清除 storeId (值为:', storeId, ')')
           }
+          
           if (storeName) {
-            localStorage.setItem('storeName', storeName);
+            localStorage.setItem('storeName', storeName)
+            this.storeName = storeName  // 🔧 同时更新 userStore
+          } else {
+            localStorage.removeItem('storeName')
+            this.storeName = undefined  // 🔧 清除 userStore
           }
 
+          console.log('✅ 登录完成，localStorage 和 userStore 已更新')
+          console.log('📋 最终 userStore.storeId:', this.storeId)
+          console.log('📋 最终 userStore.storeName:', this.storeName)
           return Promise.resolve(res);
         } else {
           return Promise.reject(new Error((res as any).message || '登录失败'));

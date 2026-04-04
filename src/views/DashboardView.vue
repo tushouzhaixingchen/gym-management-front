@@ -81,8 +81,8 @@
             <div class="card-header">
               <h4>📊 本周收入趋势</h4>
               <el-radio-group v-model="chartPeriod" size="small">
-                <el-radio-button label="week">本周</el-radio-button>
-                <el-radio-button label="month">本月</el-radio-button>
+                <el-radio-button value="week">本周</el-radio-button>
+                <el-radio-button value="month">本月</el-radio-button>
               </el-radio-group>
             </div>
           </template>
@@ -202,7 +202,7 @@
           <template #header>
             <div class="card-header">
               <h4>🔔 最近动态</h4>
-              <el-button type="link" size="small">查看全部</el-button>
+              <el-button size="small">查看全部</el-button>
             </div>
           </template>
           <div class="activity-list">

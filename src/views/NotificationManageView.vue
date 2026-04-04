@@ -224,8 +224,8 @@
           <el-col :span="12">
             <el-form-item label="发布状态" prop="publishStatus">
               <el-radio-group v-model="formData.publishStatus">
-                <el-radio :label="0">未发布</el-radio>
-                <el-radio :label="1">已发布</el-radio>
+                <el-radio :value="0">未发布</el-radio>
+                <el-radio :value="1">已发布</el-radio>
               </el-radio-group>
             </el-form-item>
           </el-col>
@@ -268,7 +268,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, nextTick } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, View } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -330,49 +330,55 @@ const formRules = {
 // 门店选项
 const storeOptions = ref<any[]>([])
 
-// 获取当前用户信息
+// 获取当前用户信息（用于公告管理）
 const getCurrentUserInfo = async () => {
   try {
-    console.log('📋 公告管理 - 获取当前用户信息...')
-    console.log('  - localStorage 中的 role:', localStorage.getItem('role'))
-    console.log('  - localStorage 中的 userId:', localStorage.getItem('userId'))
-    console.log('  - localStorage 中的 storeId:', localStorage.getItem('storeId'))
-    console.log('  - localStorage 中的 storeName:', localStorage.getItem('storeName'))
-    console.log('  - userStore.role:', userStore.role)
-    console.log('  - userStore.userId:', userStore.userId)
-    console.log('  - userStore.storeId:', userStore.storeId)
-    console.log('  - userStore.storeName:', userStore.storeName)
+    console.log('🎯 ========== 公告管理 - 开始获取当前用户信息 ==========')
+    console.log('📋 userStore.storeId:', userStore.storeId)
+    console.log('📋 userStore.storeId 类型:', typeof userStore.storeId)
+    console.log('📋 userStore.storeName:', userStore.storeName)
+    console.log('📋 userStore.role:', userStore.role)
+    console.log('📋 localStorage storeId:', localStorage.getItem('storeId'))
+    console.log('📋 localStorage storeName:', localStorage.getItem('storeName'))
     
-    // 判断是否为超级管理员
-    // 注意：这里的 role 为 ADMIN 表示是管理员，但可能是普通管理员
-    // 需要根据 storeId 判断：如果 storeId 存在且不为 null，说明是普通管理员
-    const hasStoreId = userStore.storeId !== null && userStore.storeId !== undefined
-    const isSuperAdmin = userStore.role === 'ADMIN' && !hasStoreId
+    // 🔧 简化逻辑：直接使用 userStore 的值
+    // userStore 在初始化时已经从 localStorage 读取，登录时也会更新
+    const storeId = userStore.storeId
+    const storeName = userStore.storeName
+    const role = userStore.role
     
-    console.log('🎯 权限判断:')
-    console.log('  - hasStoreId:', hasStoreId)
-    console.log('  - isSuperAdmin:', isSuperAdmin)
+    // 判断是否为超级管理员：storeId 为 undefined/null/0 且 role 为 ADMIN
+    const isSuperAdmin = role === 'ADMIN' && (storeId === undefined || storeId === null || storeId === 0)
+    
+    console.log('🎯 判断条件:')
+    console.log('  - role === "ADMIN":', role === 'ADMIN')
+    console.log('  - storeId === undefined:', storeId === undefined)
+    console.log('  - storeId === null:', storeId === null)
+    console.log('  - storeId === 0:', storeId === 0)
+    console.log('  - 最终 isSuperAdmin:', isSuperAdmin)
+    
+    console.log('🎯 公告管理 - 用户类型判断:', {
+      isSuperAdmin,
+      role,
+      storeId,
+      storeName
+    })
+    console.log('🎯 ====================================================')
     
     if (isSuperAdmin) {
       console.log('✅ 当前用户是超级管理员（无门店限制）')
       return {
         role: 'ADMIN',
         storeId: null,
+        storeName: '全系统',
         isSuperAdmin: true
       }
     } else {
-      // 普通管理员：使用登录时存储的 storeId
-      const currentStoreId = userStore.storeId
-      const currentStoreName = userStore.storeName || `门店-${currentStoreId}`
-      
-      console.log('🏢 当前用户是普通管理员（有门店限制）:')
-      console.log('  - storeId:', currentStoreId)
-      console.log('  - storeName:', currentStoreName)
-      
+      console.log('🏢 当前用户是普通管理员（有门店限制）')
       return {
-        role: userStore.role,
-        storeId: currentStoreId || null,
-        storeName: currentStoreName,
+        role,
+        storeId: storeId || null,
+        storeName: storeName || `门店-${storeId}`,
         isSuperAdmin: false
       }
     }
@@ -385,6 +391,8 @@ const getCurrentUserInfo = async () => {
 // 加载门店选项
 const loadStoreOptions = async () => {
   console.log('🏪 公告管理 - 开始加载门店选项...')
+  console.log('🏪 当前 userStore.role:', userStore.role)
+  console.log('🏪 当前 userStore.storeId:', userStore.storeId)
   
   try {
     const userInfo = await getCurrentUserInfo()
@@ -398,41 +406,87 @@ const loadStoreOptions = async () => {
     })
     
     if (isSuperAdmin) {
-      // 超级管理员：显示所有选项
-      console.log('👑 超级管理员，显示所有门店选项')
+      // 超级管理员：显示"全系统"，不显示具体门店
+      console.log('👑 超级管理员，显示全系统')
+      
+      // 使用 0 作为超级管理员的标识（Element Plus 要求 value 不能是 null/undefined）
       storeOptions.value = [
-        { label: '全系统', value: null },
-        { label: '迈格健身 - 朝阳店', value: 1 },
-        { label: '迈格健身 - 海淀店', value: 2 }
+        { label: '全系统', value: 0 }  // 改为 0
       ]
+      
+      // 使用 nextTick 确保 DOM 更新后再设置值
+      await nextTick()
+      formData.value.storeId = 0  // 改为 0
+      
+      console.log('✅ 已设置默认门店为: 全系统 (0)')
+      console.log('✅ formData.storeId:', formData.value.storeId)
+      console.log('✅ storeOptions:', storeOptions.value)
     } else {
-      // 普通管理员：只显示本店
+      // 普通管理员：根据 storeId 从门店列表中查找门店名称
       const currentStoreId = userInfo?.storeId
-      const currentStoreName = userInfo?.storeName || `门店-${currentStoreId}`
       
-      console.log('🏢 普通管理员，只显示本店:', {
-        storeId: currentStoreId,
-        storeName: currentStoreName
-      })
+      console.log('🏢 普通管理员，storeId:', currentStoreId)
       
-      storeOptions.value = [
-        { label: currentStoreName, value: currentStoreId }
-      ]
-      
-      // 设置表单默认值为本店
-      formData.value.storeId = currentStoreId !== null && currentStoreId !== undefined ? currentStoreId : null
-      console.log('✅ 已设置默认门店为:', formData.value.storeId)
+      if (currentStoreId) {
+        // 调用门店详情接口获取门店名称
+        try {
+          console.log('🔍 正在调用门店详情接口获取门店名称...')
+          console.log('🔍 门店 ID:', currentStoreId)
+          
+          const res = await request({
+            url: `/stores/${currentStoreId}`,
+            method: 'get'
+          }) as any
+          
+          console.log('📦 门店详情接口返回:', res)
+          console.log('📦 res.data:', res.data)
+          
+          let storeName = `门店-${currentStoreId}` // 默认后备名称
+          
+          if (res.code === 200 && res.data) {
+            // 门店详情接口直接返回门店对象
+            storeName = res.data.name || res.data.storeName || storeName
+            console.log('✅ 从门店详情接口获取到名称:', storeName)
+          } else {
+            console.warn('⚠️ 门店详情接口未返回数据，使用后备名称')
+          }
+          
+          console.log('✅ 最终门店名称:', storeName)
+          
+          storeOptions.value = [
+            { label: storeName, value: currentStoreId }
+          ]
+          
+          // 设置表单默认值为本店
+          formData.value.storeId = currentStoreId
+          console.log('✅ 已设置默认门店为:', formData.value.storeId, '-', storeName)
+          console.log('✅ storeOptions:', storeOptions.value)
+        } catch (error) {
+          console.error('❌ 获取门店详情失败，使用后备名称:', error)
+          // 失败时使用后备名称
+          const storeName = `门店-${currentStoreId}`
+          storeOptions.value = [
+            { label: storeName, value: currentStoreId }
+          ]
+          formData.value.storeId = currentStoreId
+        }
+      } else {
+        console.warn('⚠️ 普通管理员没有 storeId')
+        storeOptions.value = []
+      }
     }
     
     console.log('📋 公告管理 - 最终门店选项:', storeOptions.value)
+    console.log('📋 公告管理 - 表单默认门店 ID:', formData.value.storeId)
   } catch (error) {
     console.error('❌ 公告管理 - 加载门店选项失败:', error)
-    // 失败时显示默认选项
-    storeOptions.value = [
-      { label: '全系统', value: null },
-      { label: '迈格健身 - 朝阳店', value: 1 },
-      { label: '迈格健身 - 海淀店', value: 2 }
-    ]
+    // 失败时根据角色显示默认选项
+    const isSuperAdmin = userStore.role === 'ADMIN' && (!userStore.storeId || userStore.storeId === 0)
+    if (isSuperAdmin) {
+      storeOptions.value = [{ label: '全系统', value: null }]
+    } else {
+      storeOptions.value = [{ label: '全系统', value: null }]
+    }
   }
 }
 

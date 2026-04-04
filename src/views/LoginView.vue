@@ -153,21 +153,38 @@ const handleLogin = async () => {
       if (userId) {
         userStore.userId = userId;
       }
-      if (storeId) {
-        userStore.storeId = storeId;  // ✅ 存储到 userStore
+      
+      // 🔧 关键修复：先清除所有旧数据
+      console.log(' 清除旧数据...')
+      localStorage.removeItem('token')
+      localStorage.removeItem('name')
+      localStorage.removeItem('role')
+      localStorage.removeItem('userId')
+      localStorage.removeItem('storeId')
+      localStorage.removeItem('storeName')
+      
+      // 🔧 处理 storeId：超级管理员为 null/undefined，普通管理员有值
+      if (storeId !== null && storeId !== undefined && storeId !== 0) {
+        userStore.storeId = storeId
+        localStorage.setItem('storeId', String(storeId))
+        console.log('✅ 普通管理员，已存储 storeId:', storeId)
+      } else {
+        userStore.storeId = undefined
+        console.log('✅ 超级管理员，已清除 storeId')
       }
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('name', name);
-      localStorage.setItem('role', finalRole);  // ✅ 存储大写角色
-      if (userId) {
-        localStorage.setItem('userId', String(userId));
-      }
-      if (storeId) {
-        localStorage.setItem('storeId', String(storeId));  // ✅ 存储 storeId
-      }
       if (storeName) {
-        localStorage.setItem('storeName', storeName);  // ✅ 存储 storeName
+        userStore.storeName = storeName
+        localStorage.setItem('storeName', storeName)
+      } else {
+        userStore.storeName = undefined
+      }
+      
+      localStorage.setItem('token', token)
+      localStorage.setItem('name', name)
+      localStorage.setItem('role', finalRole)
+      if (userId) {
+        localStorage.setItem('userId', String(userId))
       }
 
       console.log('💾 存储到 localStorage:');
@@ -175,8 +192,8 @@ const handleLogin = async () => {
       console.log('  - name:', name);
       console.log('  - role:', finalRole);
       console.log('  - userId:', userId);
-      console.log('  - storeId:', storeId);
-      console.log('  - storeName:', storeName);
+      console.log('  - storeId:', userStore.storeId);
+      console.log('  - storeName:', userStore.storeName);
 
       ElMessage.success('登录成功');
       
