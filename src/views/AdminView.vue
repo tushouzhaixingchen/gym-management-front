@@ -190,10 +190,11 @@ interface Admin {
   status: number;
 }
 
-// 分页数据类型
+// 分页数据类型（支持多种格式）
 interface PageData<T = any> {
   list: T[];
   total: number;
+  records?: T[];  // 兼容 MyBatis-Plus 风格
 }
 
 // 搜索表单
@@ -270,8 +271,27 @@ const storeOptions = ref<{ id: number; name: string }[]>([]);
 const getAdminList = async () => {
   loading.value = true;
   try {
+    //  添加详细调试日志
+    console.log(' 开始请求管理员列表...');
+    console.log('  - 请求 URL: /admins');
+    console.log('  - 请求参数:', {
+      page: pagination.page,
+      pageSize: pagination.pageSize,
+      keyword: searchForm.value.keyword
+    });
+    
+    // 获取当前用户信息
+    const token = localStorage.getItem('token');
+    const role = localStorage.getItem('role');
+    const name = localStorage.getItem('name');
+    
+    console.log('👤 当前用户信息:');
+    console.log('  - 用户名:', name);
+    console.log('  - 角色:', role);
+    console.log('  - Token:', token ? '✅ 存在' : '❌ 不存在');
+    
     const res = await request({
-      url: '/admins',
+      url: '/admins',  // ✅ 后端实际接口路径（没有 /admin 前缀）
       method: 'get',
       params: {
         page: pagination.page,
@@ -280,12 +300,58 @@ const getAdminList = async () => {
       }
     }) as ApiResponse<PageData<Admin>>;
 
+    console.log('📦 后端完整响应:', res);
+    console.log('  - 响应 code:', res.code);
+    console.log('  - 响应 message:', res.message);
+    console.log('  - 响应 data:', res.data);
+    console.log('  - data 类型:', typeof res.data);
+    console.log('  - data 是否为数组:', Array.isArray(res.data));
+    
+    // 兼容多种数据格式
     if (res.code === 200 && res.data) {
-      tableData.value = res.data.list || [];
-      pagination.total = res.data.total || 0;
+      // 判断数据格式
+      if (Array.isArray(res.data)) {
+        // 直接返回数组
+        tableData.value = res.data;
+        pagination.total = res.data.length;
+        console.log('✅ 使用格式：直接数组');
+      } else if (Array.isArray(res.data.list)) {
+        // MyBatis-Plus 分页格式
+        tableData.value = res.data.list;
+        pagination.total = res.data.total || res.data.list.length;
+        console.log('✅ 使用格式：data.list');
+      } else if (Array.isArray(res.data.records)) {
+        // 另一种分页格式
+        tableData.value = res.data.records;
+        pagination.total = res.data.total || res.data.records.length;
+        console.log('✅ 使用格式：data.records');
+      } else {
+        // 默认格式
+        tableData.value = res.data.list || [];
+        pagination.total = res.data.total || 0;
+        console.log('✅ 使用格式：默认格式');
+      }
+      
+      console.log(' 表格数据:', tableData.value);
+      console.log('📊 总条数:', pagination.total);
+      console.log('📊 数据条数:', tableData.value.length);
+      
+      if (tableData.value.length === 0) {
+        console.warn('⚠️ 表格数据为空！可能原因：');
+        console.warn('  1. 后端没有返回数据');
+        console.warn('  2. 后端权限验证失败（虽然 code=200）');
+        console.warn('  3. 查询条件过滤了所有数据');
+      }
+    } else {
+      console.error('❌ 响应异常:', {
+        code: res.code,
+        message: res.message,
+        data: res.data
+      });
     }
   } catch (error) {
-    console.error('获取管理员列表失败:', error);
+    console.error('❌ 获取管理员列表失败:', error);
+    console.error('错误详情:', error);
     ElMessage.error('获取列表失败');
   } finally {
     loading.value = false;
@@ -319,9 +385,11 @@ const handleEdit = async (row: any) => {
 
   try {
     const res = await request({
-      url: `/admins/${row.id}`,
+      url: `/admins/${row.id}`,  // ✅ 后端实际接口路径
       method: 'get'
     }) as ApiResponse<Admin>;
+
+    console.log('管理员详情响应:', res);
 
     if (res.code === 200 && res.data) {
       formData.value = {
@@ -348,9 +416,11 @@ const handleDelete = (row: any) => {
   ).then(async () => {
     try {
       const res = await request({
-        url: `/admins/${row.id}`,
+        url: `/admins/${row.id}`,  // ✅ 后端实际接口路径
         method: 'delete'
       }) as ApiResponse<any>;
+
+      console.log('删除响应:', res);
 
       if (res.code === 200) {
         ElMessage.success('删除成功');
@@ -381,11 +451,15 @@ const handleSubmit = async () => {
         delete data.password;
       }
 
+      console.log('提交数据:', data);
+
       const res = await request({
-        url: isEdit.value ? `/admins/${data.id}` : '/admins',
+        url: isEdit.value ? `/admins/${data.id}` : '/admins',  // ✅ 后端实际接口路径
         method: isEdit.value ? 'put' : 'post',
         data
       }) as ApiResponse<any>;
+
+      console.log('提交响应:', res);
 
       if (res.code === 200) {
         ElMessage.success(isEdit.value ? '修改成功' : '添加成功');

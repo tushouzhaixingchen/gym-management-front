@@ -202,11 +202,23 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="门店" prop="storeId">
-              <el-select v-model="formData.storeId" placeholder="请选择门店" clearable style="width: 100%">
-                <el-option label="全部门店" :value="null" />
-                <el-option label="迈格健身 - 朝阳店" :value="1" />
-                <el-option label="迈格健身 - 海淀店" :value="2" />
+              <el-select 
+                v-model="formData.storeId" 
+                placeholder="请选择门店" 
+                clearable 
+                style="width: 100%"
+                :disabled="userStore.role !== 'ADMIN'"
+              >
+                <el-option
+                  v-for="store in storeOptions"
+                  :key="store.value"
+                  :label="store.label"
+                  :value="store.value"
+                />
               </el-select>
+              <span v-if="userStore.role !== 'ADMIN'" style="color: #909399; font-size: 12px;">
+                （普通管理员只能发布本店公告）
+              </span>
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -260,6 +272,10 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, View } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { useUserStore } from '@/stores/user'
+
+// 获取用户 store
+const userStore = useUserStore()
 
 // 搜索表单
 const searchForm = reactive({
@@ -292,12 +308,12 @@ const submitLoading = ref(false)
 
 // 表单数据
 const formData = ref({
-  id: null,
+  id: null as number | null,
   title: '',
   content: '',
   publishType: 'single',
   priority: 1,
-  storeId: null,
+  storeId: null as number | null,
   publishStatus: 0,
   publishTime: '',
   expireTime: ''
@@ -309,6 +325,115 @@ const formRules = {
   content: [{ required: true, message: '请输入公告内容', trigger: 'blur' }],
   publishType: [{ required: true, message: '请选择发布类型', trigger: 'change' }],
   priority: [{ required: true, message: '请选择优先级', trigger: 'change' }]
+}
+
+// 门店选项
+const storeOptions = ref<any[]>([])
+
+// 获取当前用户信息
+const getCurrentUserInfo = async () => {
+  try {
+    console.log('📋 公告管理 - 获取当前用户信息...')
+    console.log('  - localStorage 中的 role:', localStorage.getItem('role'))
+    console.log('  - localStorage 中的 userId:', localStorage.getItem('userId'))
+    console.log('  - localStorage 中的 storeId:', localStorage.getItem('storeId'))
+    console.log('  - localStorage 中的 storeName:', localStorage.getItem('storeName'))
+    console.log('  - userStore.role:', userStore.role)
+    console.log('  - userStore.userId:', userStore.userId)
+    console.log('  - userStore.storeId:', userStore.storeId)
+    console.log('  - userStore.storeName:', userStore.storeName)
+    
+    // 判断是否为超级管理员
+    // 注意：这里的 role 为 ADMIN 表示是管理员，但可能是普通管理员
+    // 需要根据 storeId 判断：如果 storeId 存在且不为 null，说明是普通管理员
+    const hasStoreId = userStore.storeId !== null && userStore.storeId !== undefined
+    const isSuperAdmin = userStore.role === 'ADMIN' && !hasStoreId
+    
+    console.log('🎯 权限判断:')
+    console.log('  - hasStoreId:', hasStoreId)
+    console.log('  - isSuperAdmin:', isSuperAdmin)
+    
+    if (isSuperAdmin) {
+      console.log('✅ 当前用户是超级管理员（无门店限制）')
+      return {
+        role: 'ADMIN',
+        storeId: null,
+        isSuperAdmin: true
+      }
+    } else {
+      // 普通管理员：使用登录时存储的 storeId
+      const currentStoreId = userStore.storeId
+      const currentStoreName = userStore.storeName || `门店-${currentStoreId}`
+      
+      console.log('🏢 当前用户是普通管理员（有门店限制）:')
+      console.log('  - storeId:', currentStoreId)
+      console.log('  - storeName:', currentStoreName)
+      
+      return {
+        role: userStore.role,
+        storeId: currentStoreId || null,
+        storeName: currentStoreName,
+        isSuperAdmin: false
+      }
+    }
+  } catch (error) {
+    console.error('❌ 公告管理 - 获取当前用户信息失败:', error)
+  }
+  return null
+}
+
+// 加载门店选项
+const loadStoreOptions = async () => {
+  console.log('🏪 公告管理 - 开始加载门店选项...')
+  
+  try {
+    const userInfo = await getCurrentUserInfo()
+    const isSuperAdmin = userInfo?.isSuperAdmin === true
+    
+    console.log('🎯 公告管理 - 用户类型判断:', {
+      isSuperAdmin,
+      role: userInfo?.role,
+      storeId: userInfo?.storeId,
+      storeName: userInfo?.storeName
+    })
+    
+    if (isSuperAdmin) {
+      // 超级管理员：显示所有选项
+      console.log('👑 超级管理员，显示所有门店选项')
+      storeOptions.value = [
+        { label: '全系统', value: null },
+        { label: '迈格健身 - 朝阳店', value: 1 },
+        { label: '迈格健身 - 海淀店', value: 2 }
+      ]
+    } else {
+      // 普通管理员：只显示本店
+      const currentStoreId = userInfo?.storeId
+      const currentStoreName = userInfo?.storeName || `门店-${currentStoreId}`
+      
+      console.log('🏢 普通管理员，只显示本店:', {
+        storeId: currentStoreId,
+        storeName: currentStoreName
+      })
+      
+      storeOptions.value = [
+        { label: currentStoreName, value: currentStoreId }
+      ]
+      
+      // 设置表单默认值为本店
+      formData.value.storeId = currentStoreId !== null && currentStoreId !== undefined ? currentStoreId : null
+      console.log('✅ 已设置默认门店为:', formData.value.storeId)
+    }
+    
+    console.log('📋 公告管理 - 最终门店选项:', storeOptions.value)
+  } catch (error) {
+    console.error('❌ 公告管理 - 加载门店选项失败:', error)
+    // 失败时显示默认选项
+    storeOptions.value = [
+      { label: '全系统', value: null },
+      { label: '迈格健身 - 朝阳店', value: 1 },
+      { label: '迈格健身 - 海淀店', value: 2 }
+    ]
+  }
 }
 
 // 获取数据
@@ -393,12 +518,30 @@ const handleView = (row: any) => {
 
 // 新增
 const handleAdd = () => {
+  console.log('➕ 公告管理 - 点击新增按钮')
+  console.log('  - 当前用户角色:', userStore.role)
+  console.log('  - 当前表单 storeId:', formData.value.storeId)
+  
   dialogTitle.value = '新增公告'
   dialogVisible.value = true
+  
+  // 确保新增时门店值正确
+  if (userStore.role !== 'ADMIN' && !formData.value.storeId) {
+    // 如果是普通管理员且没有默认门店，重新加载
+    loadStoreOptions()
+  }
 }
 
 // 编辑
 const handleEdit = (row: any) => {
+  console.log('✏️ 公告管理 - 点击编辑按钮')
+  console.log('  - 编辑的公告信息:', {
+    id: row.id,
+    title: row.title,
+    storeId: row.storeId,
+    storeName: row.storeName
+  })
+  
   dialogTitle.value = '编辑公告'
   formData.value = {
     id: row.id,
@@ -444,12 +587,26 @@ const handleSubmit = async () => {
   if (!formRef.value) return
 
   await formRef.value.validate(async (valid: boolean) => {
-    if (!valid) return
+    if (!valid) {
+      console.error('❌ 公告管理 - 表单验证失败')
+      return
+    }
+
+    console.log('✅ 公告管理 - 表单验证通过')
+    console.log('📦 公告管理 - 提交的数据:', formData.value)
+    console.log('  - 当前用户角色:', userStore.role)
+    console.log('  - 提交的门店 ID:', formData.value.storeId)
 
     submitLoading.value = true
     try {
       const url = formData.value.id ? `/admin/announcements/${formData.value.id}` : '/admin/announcements'
       const method = formData.value.id ? 'put' : 'post'
+
+      console.log('🌐 公告管理 - 请求信息:', {
+        URL: url,
+        Method: method,
+        Data: formData.value
+      })
 
       const res = await request({
         url,
@@ -457,14 +614,18 @@ const handleSubmit = async () => {
         data: formData.value
       }) as any
 
+      console.log('📦 公告管理 - 后端返回:', res)
+
       if (res.code === 200) {
         ElMessage.success(formData.value.id ? '更新成功' : '新增成功')
         dialogVisible.value = false
         fetchData()
       } else {
         ElMessage.error(res.message || '操作失败')
+        console.error('❌ 公告管理 - 操作失败:', res.message)
       }
     } catch (error: any) {
+      console.error('❌ 公告管理 - 提交失败:', error)
       ElMessage.error(error.message || '操作失败')
     } finally {
       submitLoading.value = false
@@ -474,6 +635,7 @@ const handleSubmit = async () => {
 
 // 对话框关闭
 const handleDialogClose = () => {
+  console.log('🔄 公告管理 - 关闭对话框，重置表单')
   formRef.value?.resetFields()
   formData.value = {
     id: null,
@@ -486,10 +648,15 @@ const handleDialogClose = () => {
     publishTime: '',
     expireTime: ''
   }
+  
+  // 重新加载门店选项，确保默认值正确
+  loadStoreOptions()
 }
 
 onMounted(() => {
+  console.log('🚀 公告管理 - 组件挂载，开始初始化')
   fetchData()
+  loadStoreOptions()
 })
 </script>
 

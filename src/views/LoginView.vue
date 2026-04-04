@@ -91,7 +91,7 @@ const errorMsg = ref('');
 
 const handleLogin = async () => {
   if (!form.value.account || !form.value.password) {
-    errorMsg.value = '请输入完整的账号和密码';
+    errorMsg.value = '请输入完整的账号密码';
     ElMessage.warning('请输入完整的账号和密码');
     return;
   }
@@ -99,8 +99,17 @@ const handleLogin = async () => {
   loading.value = true;
   errorMsg.value = '';
 
+  console.log('🚀 开始登录...');
+  console.log('  - 账号:', form.value.account);
+  console.log('  - 密码:', '*'.repeat(form.value.password.length));
+
   try {
     const res: any = await loginApi(form.value);
+    
+    console.log('📦 登录接口完整响应:', res);
+    console.log('  - 响应 code:', res.code);
+    console.log('  - 响应 message:', res.message);
+    console.log('  - 响应 data:', JSON.stringify(res.data, null, 2));
 
     if (res.code === 200) {
       const data = res.data || {};
@@ -111,15 +120,31 @@ const handleLogin = async () => {
       const userInfo = data.userInfo || data.user || {};
       const role = userInfo.userType || userInfo.role || userInfo.userRole || data.userType || data.role;
       const userId = userInfo.id || data.userId || data.id || data.adminId;
+      const storeId = userInfo.storeId || data.storeId;  // ✅ 提取 storeId
+      const storeName = userInfo.storeName || data.storeName;  // ✅ 提取 storeName
+      
+      console.log(' 解析用户信息:');
+      console.log('  - token:', token ? '✅ 存在' : '❌ 不存在');
+      console.log('  - name:', name);
+      console.log('  - userInfo:', userInfo);
+      console.log('  - 原始 role:', role);
+      console.log('  - userId:', userId);
+      console.log('  - storeId:', storeId);
+      console.log('  - storeName:', storeName);
       
       let finalRole = role;
       if (!finalRole) {
         const account = form.value.account;
         if (account.toLowerCase().includes('admin')) {
           finalRole = 'ADMIN';
+          console.log('  ⚠️ 未检测到 role，根据账号推断为 ADMIN');
         } else {
           finalRole = 'MEMBER';
+          console.log('  ⚠️ 未检测到 role，根据账号推断为 MEMBER');
         }
+      } else {
+        finalRole = finalRole.toUpperCase();
+        console.log('  ✅ role 转为大写:', finalRole);
       }
       
       userStore.token = token;
@@ -128,24 +153,45 @@ const handleLogin = async () => {
       if (userId) {
         userStore.userId = userId;
       }
+      if (storeId) {
+        userStore.storeId = storeId;  // ✅ 存储到 userStore
+      }
       
       localStorage.setItem('token', token);
       localStorage.setItem('name', name);
-      localStorage.setItem('role', role);
+      localStorage.setItem('role', finalRole);  // ✅ 存储大写角色
       if (userId) {
         localStorage.setItem('userId', String(userId));
       }
+      if (storeId) {
+        localStorage.setItem('storeId', String(storeId));  // ✅ 存储 storeId
+      }
+      if (storeName) {
+        localStorage.setItem('storeName', storeName);  // ✅ 存储 storeName
+      }
+
+      console.log('💾 存储到 localStorage:');
+      console.log('  - token:', token ? '✅' : '❌');
+      console.log('  - name:', name);
+      console.log('  - role:', finalRole);
+      console.log('  - userId:', userId);
+      console.log('  - storeId:', storeId);
+      console.log('  - storeName:', storeName);
 
       ElMessage.success('登录成功');
       
-      if (userStore.role === 'ADMIN') {
+      console.log('🎯 准备跳转，当前角色:', finalRole);
+      if (finalRole === 'ADMIN') {
+        console.log('  → 跳转到管理后台：/admin/home');
         router.push('/admin/home');
       } else {
+        console.log('  → 跳转到会员中心：/member/home');
         router.push('/member/home');
       }
     } else {
       errorMsg.value = res.message || '登录失败，请检查账号密码';
       ElMessage.error(res.message || '登录失败，请检查账号密码');
+      console.error('❌ 登录失败:', res.message);
     }
 
   } catch (error: any) {
@@ -155,6 +201,8 @@ const handleLogin = async () => {
                 '网络连接失败';
     errorMsg.value = msg;
     ElMessage.error(msg);
+    console.error('❌ 登录异常:', error);
+    console.error('错误详情:', error.response?.data);
   } finally {
     loading.value = false;
   }
