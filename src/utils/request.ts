@@ -8,6 +8,15 @@ const request = axios.create({
 // 请求拦截器
 request.interceptors.request.use(
   (config) => {
+    // 📝 打印请求信息
+    console.log('🌐 ============ HTTP请求 ============');
+    console.log('🔗 URL:', (config.baseURL || '') + (config.url || ''));
+    console.log('📮 方法:', config.method?.toUpperCase());
+    console.log('📦 请求头:', JSON.stringify(config.headers, null, 2));
+    console.log('📋 请求体:', config.data);
+    console.log('🔑 Token:', config.headers.Authorization || '无');
+    console.log('====================================');
+    
     const isLoginRequest = config.url?.includes('/auth/login') || config.url?.includes('/auth/register');
     
     if (!isLoginRequest) {
@@ -30,9 +39,22 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response) => {
+    console.log('📨 ============ HTTP响应 ============');
+    console.log('✅ 状态码:', response.status);
+    console.log('🔗 URL:', response.config.url);
+    console.log('📦 响应数据:', response.data);
+    console.log('====================================');
     return response.data;
   },
   (error) => {
+    console.log('❌ ============ HTTP错误 ============');
+    console.log('❌ 错误状态:', error.response?.status);
+    console.log('❌ 错误消息:', error.message);
+    console.log('❌ 错误响应:', error.response?.data);
+    console.log('❌ 请求URL:', error.config?.url);
+    console.log('❌ 请求方法:', error.config?.method);
+    console.log('====================================');
+    
     // 如果是 401 错误且是登录请求，给出更友好的提示
     if (error.response?.status === 401) {
       const isLoginRequest = error.config?.url?.includes('/auth/login') || 

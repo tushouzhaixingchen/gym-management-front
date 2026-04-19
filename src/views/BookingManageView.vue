@@ -415,12 +415,15 @@ const loadAppointments = async () => {
     if (searchForm.status !== null && searchForm.status !== undefined) {
       params.status = searchForm.status;
     }
-
+    console.log('📋 ============ 加载预约列表 ============');
+    console.log('📋 请求接口: GET /admin/appointments');
+    console.log('📋 请求参数:', params);
+    
     const res: any = await request.get('/admin/appointments', { params });
     
-    console.log('预约管理 - 后端返回数据:', res);
-    console.log('预约管理 - res 的类型:', typeof res);
-    console.log('预约管理 - res.data 字段:', res.data);
+    console.log('📋 后端返回数据:', res);
+    console.log('📋 res 的类型:', typeof res);
+    console.log('📋 res.data 字段:', res.data);
     
     // 👇 修复：后端可能直接返回数组，而不是 { code, data } 格式
     let dataArray = [];
@@ -428,43 +431,43 @@ const loadAppointments = async () => {
     
     // 情况 1: 标准格式 { code: 200, data: [...] }
     if (res && typeof res === 'object' && 'data' in res && res.data) {
-      console.log('预约管理 - 标准格式，检查 data 字段');
+      console.log('📋 标准格式，检查 data 字段');
       
       if (Array.isArray(res.data.records)) {
         // MyBatis-Plus 分页风格
-        console.log('预约管理 - 使用 MyBatis-Plus 格式，数据量:', res.data.records.length);
+        console.log('📋 使用 MyBatis-Plus 格式，数据量:', res.data.records.length);
         dataArray = res.data.records;
         total = res.data.total || 0;
       } else if (Array.isArray(res.data.list)) {
         // 通用分页风格
-        console.log('预约管理 - 使用通用分页格式，数据量:', res.data.list.length);
+        console.log('📋 使用通用分页格式，数据量:', res.data.list.length);
         dataArray = res.data.list;
         total = res.data.total || 0;
       } else if (Array.isArray(res.data)) {
         // 直接数组
-        console.log('预约管理 - 使用直接数组格式，数据量:', res.data.length);
+        console.log('📋 使用直接数组格式，数据量:', res.data.length);
         dataArray = res.data;
         total = res.data.length;
       }
     }
     // 情况 2: 后端直接返回数组 [ ... ]
     else if (Array.isArray(res)) {
-      console.log('预约管理 - 后端直接返回数组，数据量:', res.length);
+      console.log('📋 后端直接返回数组，数据量:', res.length);
       dataArray = res;
       total = res.length;
     }
     // 情况 3: 其他格式，尝试从 res 中提取
     else {
-      console.warn('预约管理 - 未识别的数据格式:', res);
+      console.warn('📋 未识别的数据格式:', res);
     }
     
     // 赋值给表格
     tableData.value = dataArray;
     pagination.total = total;
     
-    console.log('预约管理 - 最终表格数据:', tableData.value);
-    console.log('预约管理 - 表格数据长度:', tableData.value.length);
-    console.log('预约管理 - 分页总数:', pagination.total);
+    console.log('📋 最终表格数据:', tableData.value);
+    console.log('📋 表格数据长度:', tableData.value.length);
+    console.log('📋 分页总数:', pagination.total);
 
   } catch (error: any) {
     console.error('加载预约列表失败:', error);
@@ -560,11 +563,44 @@ const submitConfirm = async () => {
   if (!confirmId.value) return;
   
   try {
-    await request.post(`/admin/appointments/${confirmId.value}/confirm`);
-    ElMessage.success('确认成功');
-    confirmVisible.value = false;
-    loadAppointments();
+    console.log('🔒 ============ 确认预约 ============');
+    console.log('🔒 预约 ID:', confirmId.value);
+    console.log('🔒 请求接口: PUT /admin/appointments/' + confirmId.value + '/confirm');
+    console.log('🔒 请求方法: PUT');
+    console.log('🔒 请求体: {}（后端需要 AppointmentConfirmRequest 对象）');
+    
+    // 后端报错 "Required request body is missing"
+    // 说明后端需要接收一个请求体对象，即使字段可以为空
+    const res: any = await request.put(`/admin/appointments/${confirmId.value}/confirm`, {});
+    
+    console.log('🔒 ============ 确认预约响应 ============');
+    console.log('🔒 完整响应对象:', res);
+    console.log('🔒 res.code:', res?.code);
+    console.log('🔒 res.message:', res?.message);
+    console.log('🔒 res.data:', res?.data);
+    console.log('🔒 响应类型:', typeof res);
+    console.log('🔒 ==========================================');
+    
+    // 检查响应是否成功
+    if (res && res.code === 200) {
+      ElMessage.success('确认成功');
+      confirmVisible.value = false;
+      console.log('🔄 重新加载预约列表...');
+      await loadAppointments();
+    } else {
+      console.error('❌ 确认失败 - 后端返回错误');
+      console.error('❌ 错误码:', res?.code);
+      console.error('❌ 错误信息:', res?.message);
+      ElMessage.error(res?.message || '确认失败');
+    }
   } catch (error: any) {
+    console.error('❌ ============ 确认预约异常 ============');
+    console.error('❌ 错误对象:', error);
+    console.error('❌ 错误消息:', error.message);
+    console.error('❌ 错误响应:', error.response);
+    console.error('❌ 错误响应数据:', error.response?.data);
+    console.error('❌ 错误状态码:', error.response?.status);
+    console.error('❌ ==========================================');
     ElMessage.error(error.message || '确认失败');
   }
 };
@@ -581,14 +617,27 @@ const submitComplete = async () => {
   if (!completeId.value) return;
   
   try {
-    await request.post(`/admin/appointments/${completeId.value}/complete`, {
+    console.log('✅ ============ 完成预约 ============');
+    console.log('✅ 预约 ID:', completeId.value);
+    console.log('✅ 请求接口: PUT /admin/appointments/' + completeId.value + '/complete');
+    console.log('✅ 请求方法: PUT');
+    console.log('✅ 请求体:', {
       actualDuration: completeForm.actualDuration,
-      remark: completeForm.remark,
+      remark: completeForm.remark
     });
+    
+    await request.put(`/admin/appointments/${completeId.value}/complete`, {
+      actualDuration: completeForm.actualDuration,
+      remark: completeForm.remark
+    });
+    
     ElMessage.success('完成成功');
     completeVisible.value = false;
     loadAppointments();
+    console.log('✅ ==========================================');
   } catch (error: any) {
+    console.error('❌ 完成预约失败:', error);
+    console.error('❌ 错误响应:', error.response?.data);
     ElMessage.error(error.message || '完成失败');
   }
 };
@@ -604,13 +653,23 @@ const submitNoShow = async () => {
   if (!noShowId.value) return;
   
   try {
-    await request.post(`/admin/appointments/${noShowId.value}/no-show`, {
-      reason: noShowForm.reason,
+    console.log('❌ ============ 标记爽约 ============');
+    console.log('❌ 预约 ID:', noShowId.value);
+    console.log('❌ 请求接口: PUT /admin/appointments/' + noShowId.value + '/no-show');
+    console.log('❌ 请求方法: PUT');
+    console.log('❌ 请求体:', { reason: noShowForm.reason });
+    
+    await request.put(`/admin/appointments/${noShowId.value}/no-show`, {
+      reason: noShowForm.reason
     });
+    
     ElMessage.success('标记成功');
     noShowVisible.value = false;
     loadAppointments();
+    console.log('❌ ==========================================');
   } catch (error: any) {
+    console.error('❌ 标记爽约失败:', error);
+    console.error('❌ 错误响应:', error.response?.data);
     ElMessage.error(error.message || '标记失败');
   }
 };
@@ -627,14 +686,27 @@ const submitCancel = async () => {
   if (!cancelId.value) return;
   
   try {
-    await request.post(`/admin/appointments/${cancelId.value}/cancel`, {
+    console.log('🚫 ============ 取消预约 ============');
+    console.log('🚫 预约 ID:', cancelId.value);
+    console.log('🚫 请求接口: PUT /admin/appointments/' + cancelId.value + '/cancel');
+    console.log('🚫 请求方法: PUT');
+    console.log('🚫 请求体:', {
       cancelReason: cancelForm.reason,
-      cancelBy: cancelForm.cancelBy,
+      cancelBy: cancelForm.cancelBy
     });
+    
+    await request.put(`/admin/appointments/${cancelId.value}/cancel`, {
+      cancelReason: cancelForm.reason,
+      cancelBy: cancelForm.cancelBy
+    });
+    
     ElMessage.success('取消成功');
     cancelVisible.value = false;
     loadAppointments();
+    console.log('🚫 ==========================================');
   } catch (error: any) {
+    console.error('❌ 取消预约失败:', error);
+    console.error('❌ 错误响应:', error.response?.data);
     ElMessage.error(error.message || '取消失败');
   }
 };

@@ -178,45 +178,90 @@ const handleLogout = async () => {
   display: flex;
   height: 100vh;
   overflow: hidden;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
 .sidebar {
-  width: 240px;
-  background-color: #304156;
+  width: 260px;
+  background: linear-gradient(180deg, #1e3c72 0%, #2a5298 100%);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+}
+
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  pointer-events: none;
 }
 
 .logo {
-  height: 60px;
+  height: 70px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #2b3a4b;
-  border-bottom: 1px solid #3d4a5a;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  position: relative;
+  z-index: 1;
 }
 
 .logo h2 {
   color: #fff;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 20px;
+  font-weight: 700;
   margin: 0;
+  letter-spacing: 1px;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .sidebar-menu {
   flex: 1;
   border-right: none;
-  background-color: #304156;
+  background: transparent;
+  position: relative;
+  z-index: 1;
+}
+
+.sidebar-menu :deep(.el-menu-item) {
+  height: 56px;
+  line-height: 56px;
+  margin: 4px 12px;
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-menu :deep(.el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.15) !important;
+  transform: translateX(4px);
+}
+
+.sidebar-menu :deep(.el-menu-item.is-active) {
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.3) 0%, rgba(64, 158, 255, 0.2) 100%) !important;
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 .user-info {
   padding: 20px;
-  background-color: #2b3a4b;
-  border-top: 1px solid #3d4a5a;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+}
+
+.user-info :deep(.el-avatar) {
+  border: 3px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .user-detail {
@@ -225,14 +270,28 @@ const handleLogout = async () => {
 
 .user-detail .name {
   color: #fff;
-  font-size: 14px;
+  font-size: 15px;
+  font-weight: 600;
   margin: 0 0 4px 0;
 }
 
 .user-detail .role {
-  color: #bfcbd9;
+  color: rgba(255, 255, 255, 0.7);
   font-size: 12px;
   margin: 0;
+}
+
+.user-info :deep(.el-button) {
+  background: rgba(245, 108, 108, 0.2);
+  border: 1px solid rgba(245, 108, 108, 0.5);
+  color: #fff;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.user-info :deep(.el-button:hover) {
+  background: rgba(245, 108, 108, 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(245, 108, 108, 0.3);
 }
 
 .main-content {
@@ -240,43 +299,121 @@ const handleLogout = async () => {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: #f0f2f5;
+  background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
 }
 
 .header {
-  height: 60px;
-  background-color: #fff;
-  padding: 0 24px;
+  height: 70px;
+  background: white;
+  padding: 0 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.header::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
 }
 
 .header h3 {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
+  font-size: 22px;
+  font-weight: 700;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
   margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.header-right :deep(.el-button) {
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.header-right :deep(.el-button:hover) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 .content {
   flex: 1;
-  padding: 24px;
+  padding: 28px;
   overflow-y: auto;
+  background: linear-gradient(180deg, #f0f4ff 0%, #ffffff 100%);
 }
 
 .placeholder {
-  padding: 40px;
+  padding: 60px 40px;
   text-align: center;
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
 }
 
 .placeholder h3 {
-  color: #303133;
+  color: #2d3748;
   margin-bottom: 16px;
+  font-size: 24px;
+  font-weight: 600;
 }
 
 .placeholder p {
-  color: #909399;
+  color: #718096;
+  font-size: 16px;
+}
+
+/* 滚动条美化 */
+.sidebar::-webkit-scrollbar,
+.content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track,
+.content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.content::-webkit-scrollbar-thumb {
+  background: rgba(102, 126, 234, 0.3);
+  border-radius: 4px;
+}
+
+.content::-webkit-scrollbar-thumb:hover {
+  background: rgba(102, 126, 234, 0.5);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .sidebar {
+    width: 200px;
+  }
+  
+  .logo h2 {
+    font-size: 16px;
+  }
+  
+  .content {
+    padding: 20px;
+  }
 }
 </style>

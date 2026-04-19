@@ -327,6 +327,16 @@ const formRules = {
 
 // 获取数据
 const fetchData = async () => {
+  console.log('🔍 ========== 开始加载课程数据 ==========');
+  console.log('📦 请求参数:', {
+    page: pagination.page,
+    size: pagination.size,
+    courseName: searchForm.courseName,
+    courseType: searchForm.courseType,
+    courseLevel: searchForm.courseLevel,
+    status: searchForm.status
+  });
+  
   loading.value = true
   try {
     const params: any = {
@@ -338,49 +348,88 @@ const fetchData = async () => {
     if (searchForm.courseLevel) params.courseLevel = searchForm.courseLevel
     if (searchForm.status !== null) params.status = searchForm.status
 
+    console.log('📡 准备请求API: /api/courses');
+    console.log('📦 最终请求参数:', params);
+    
     const res = await request({
       url: '/courses',
       method: 'get',
       params
     }) as any
 
-    console.log('课程管理 - 后端返回数据:', res)
-
+    console.log('📥 API响应结果:', res);
+    console.log('📊 响应类型:', typeof res);
+    console.log('📊 响应code:', res.code);
+    console.log('📊 响应message:', res.message);
+    console.log('📊 响应data:', res.data);
+    console.log('📊 响应data的完整JSON:', JSON.stringify(res.data, null, 2));
+    
     if (res.code === 200) {
       // 处理不同的数据格式
       if (res.data) {
-        // MyBatis-Plus 风格 { records: [...], total: 0 }
-        if (Array.isArray(res.data.records)) {
-          tableData.value = res.data.records
-          pagination.total = res.data.total || 0
-        }
-        // 通用分页格式 { list: [...], total: 0 }
-        else if (Array.isArray(res.data.list)) {
-          tableData.value = res.data.list
-          pagination.total = res.data.total || 0
-        } 
-        // 直接返回数组
-        else if (Array.isArray(res.data)) {
+        console.log('📦 data类型:', typeof res.data);
+        console.log('📦 data是否为数组:', Array.isArray(res.data));
+        console.log('📦 data的所有键:', Object.keys(res.data));
+        console.log('📦 data完整内容:', JSON.stringify(res.data, null, 2));
+        
+        if (Array.isArray(res.data)) {
           tableData.value = res.data
           pagination.total = res.data.length
-        }
-        // 单个对象
-        else {
-          tableData.value = [res.data]
-          pagination.total = 1
+          console.log('✅ 直接使用data数组, 数量:', res.data.length);
+        } else if (res.data.records) {
+          tableData.value = res.data.records
+          pagination.total = res.data.total || res.data.records.length
+          console.log('✅ 使用data.records, 数量:', res.data.records.length);
+        } else if (res.data.list) {
+          tableData.value = res.data.list
+          pagination.total = res.data.total || res.data.list.length
+          console.log('✅ 使用data.list, 数量:', res.data.list.length);
+        } else {
+          console.log('⚠️ 无法识别的数据格式');
+          console.log('📋 data的所有键:', Object.keys(res.data));
+          tableData.value = []
+          pagination.total = 0
         }
       } else {
+        console.log('⚠️ data为空');
         tableData.value = []
         pagination.total = 0
       }
+      
+      console.log('📋 最终表格数据:', tableData.value);
+      console.log('📊 总数:', pagination.total);
+      
+      if (tableData.value.length > 0) {
+        console.log('📄 第一条数据示例:', JSON.stringify(tableData.value[0], null, 2));
+      } else {
+        console.log('⚠️ 表格数据为空，可能的原因：');
+        console.log('  1. 后端数据库中没有课程数据');
+        console.log('  2. 后端接口返回的数据结构不匹配');
+        console.log('  3. 需要使用Postman或其他工具直接测试后端接口');
+      }
     } else {
-      ElMessage.error(res.message || '获取数据失败')
+      console.warn('⚠️ API返回非成功状态');
+      console.warn('  - code:', res.code);
+      console.warn('  - message:', res.message);
+      ElMessage.warning(res.message || '获取数据失败');
+      tableData.value = []
+      pagination.total = 0
     }
   } catch (error: any) {
-    console.error('获取课程数据失败:', error)
-    ElMessage.error(error.message || '获取数据失败')
+    console.error('❌ ========== 加载课程数据失败 ==========');
+    console.error('❌ 错误类型:', error.constructor.name);
+    console.error('❌ 错误消息:', error.message);
+    console.error('❌ 错误详情:', error);
+    if (error.response) {
+      console.error('❌ 响应状态:', error.response.status);
+      console.error('❌ 响应数据:', error.response.data);
+    }
+    ElMessage.error('加载课程数据失败: ' + (error.message || '未知错误'));
+    tableData.value = []
+    pagination.total = 0
   } finally {
     loading.value = false
+    console.log('🏁 ========== 课程数据加载完成 ==========');
   }
 }
 

@@ -92,13 +92,26 @@ const routes: Array<RouteRecordRaw> = [
     path: '/member/home',
     name: 'MemberHome',
     component: () => import('@/views/MemberHomeView.vue'),
-    meta: { title: '会员首页', requiresAuth: true, roles: ['MEMBER'] }
+    meta: { title: '会员首页', requiresAuth: false, roles: ['MEMBER'] }
   },
   {
     path: '/member/coach-booking',
     name: 'MemberCoachBooking',
     component: () => import('@/views/MemberCoachBookingView.vue'),
     meta: { title: '预约教练', requiresAuth: true, roles: ['MEMBER'] }
+  },
+  {
+    path: '/member/announcements',
+    name: 'MemberAnnouncements',
+    component: () => import('@/views/MemberAnnouncementView.vue'),
+    meta: { title: '查看公告', requiresAuth: false, roles: ['MEMBER'] }
+  },
+  // 强制修改密码路由（不需要验证，但需要登录状态）
+  {
+    path: '/member/change-password',
+    name: 'MemberChangePassword',
+    component: () => import('@/views/MemberChangePasswordView.vue'),
+    meta: { title: '修改密码', requiresAuth: false }
   }
 ];
 

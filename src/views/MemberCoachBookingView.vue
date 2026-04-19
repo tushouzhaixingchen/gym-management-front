@@ -63,7 +63,7 @@
                   {{ coach.experience ? coach.experience + '年经验' : '5 年经验' }}
                 </el-tag>
                 <span class="coach-price">
-                  ¥{{ coach.price || '200' }}/小时
+                  ¥{{ coach.hourlyRate || coach.price || 0 }}/小时
                 </span>
               </div>
             </div>
@@ -177,7 +177,7 @@
 
         <el-form-item label="费用说明">
           <div class="price-info">
-            <p>课程单价：¥{{ selectedCoach?.price || '200' }}/小时</p>
+            <p>课程单价：¥{{ getCoachHourlyRate() }}/小时</p>
             <p class="total-price">
               预计总费用：<strong>¥{{ calculatePrice }}</strong>
             </p>
@@ -243,11 +243,19 @@ const formRules = reactive({
   purpose: [{ required: true, message: '请选择预约目的', trigger: 'change' }],
 });
 
+// 获取教练的每小时费用
+const getCoachHourlyRate = () => {
+  if (!selectedCoach.value) return '0';
+  // 优先使用 hourlyRate，其次使用 price，最后默认为 0
+  return selectedCoach.value.hourlyRate || selectedCoach.value.price || 0;
+};
+
 // 计算价格
 const calculatePrice = computed(() => {
-  const price = Number(selectedCoach.value?.price) || 200;
+  const hourlyRate = Number(getCoachHourlyRate()) || 0;
   const duration = formData.duration;
-  return (price * duration / 60).toFixed(2);
+  // 计算总费用：每小时费用 × (时长分钟数 / 60)
+  return (hourlyRate * duration / 60).toFixed(2);
 });
 
 // 禁用过去的日期
@@ -267,37 +275,57 @@ const loadCoaches = async () => {
       params.storeId = searchForm.storeId;
     }
 
+    console.log('🔍 ============ 搜索教练 ============');
+    console.log('🔍 搜索表单数据:', searchForm);
     console.log('🔍 请求参数:', params);
+    console.log('🔍 接口路径: GET /member/appointments/coaches');
+    
     const res: any = await request.get('/member/appointments/coaches', { params });
-    console.log('📦 教练列表 - 后端返回数据:', res);
-    console.log('📦 res.data:', res.data);
+    console.log('📦 后端返回数据:', res);
     console.log('📦 Array.isArray(res):', Array.isArray(res));
-    console.log('📦 Array.isArray(res.data):', Array.isArray(res.data));
-
-    // 🔧 修改：后端直接返回数组，而不是 {code, message, data} 格式
+    
+    // 处理响应数据
+    let allCoaches: any[] = [];
     if (Array.isArray(res)) {
-      console.log('✅ 后端直接返回数组，数据:', res);
-      coachList.value = res;
+      console.log('✅ 后端直接返回数组');
+      allCoaches = res;
     } else if (res && res.data) {
       if (Array.isArray(res.data.records)) {
-        console.log('✅ 使用 records 格式，数据:', res.data.records);
-        coachList.value = res.data.records;
+        allCoaches = res.data.records;
       } else if (Array.isArray(res.data.list)) {
-        console.log('✅ 使用 list 格式，数据:', res.data.list);
-        coachList.value = res.data.list;
+        allCoaches = res.data.list;
       } else if (Array.isArray(res.data)) {
-        console.log('✅ 使用直接数组格式，数据:', res.data);
-        coachList.value = res.data;
+        allCoaches = res.data;
       } else {
         console.warn('⚠️ 无法识别的数据格式');
-        coachList.value = [];
+        allCoaches = [];
       }
     } else {
-      console.warn('⚠️ 没有返回数据');
-      coachList.value = [];
+      allCoaches = [];
     }
     
-    console.log('📊 最终教练列表:', coachList.value);
+    // 🔧 前端过滤：如果后端没有实现过滤，则在前端进行过滤
+    let filteredCoaches = allCoaches;
+    
+    if (searchForm.storeId) {
+      console.log('🔍 前端过滤门店 ID:', searchForm.storeId);
+      filteredCoaches = filteredCoaches.filter(coach => coach.storeId === searchForm.storeId);
+      console.log('🔍 过滤后教练数量:', filteredCoaches.length);
+    }
+    
+    if (searchForm.coachName) {
+      console.log('🔍 前端过滤教练姓名:', searchForm.coachName);
+      filteredCoaches = filteredCoaches.filter(coach => 
+        coach.realName && coach.realName.includes(searchForm.coachName)
+      );
+      console.log('🔍 过滤后教练数量:', filteredCoaches.length);
+    }
+    
+    coachList.value = filteredCoaches;
+    
+    console.log('✅ 最终教练列表数量:', coachList.value.length);
+    console.log('✅ 教练列表数据:', coachList.value);
+    console.log('🔍 ==========================================');
   } catch (error: any) {
     console.error('❌ 加载教练列表失败:', error);
     ElMessage.error(error.message || '加载失败');
@@ -310,58 +338,50 @@ const loadCoaches = async () => {
 // 加载门店列表
 const loadStores = async () => {
   try {
-    // 🔧 临时方案：使用模拟数据，因为后端接口返回 null
-    // 实际项目中应该调用后端接口
-    const mockStores = [
-      { id: 1, name: '迈格健身 - 海淀店' },
-      { id: 2, name: '迈格健身 - 朝阳店' },
-      { id: 3, name: '迈格健身 - 昌平店' },
-    ];
+    console.log('🏪 ============ 开始加载门店列表 ============');
+    console.log('🏪 请求接口：GET /stores');
     
-    console.log('🏪 使用模拟门店数据:', mockStores);
-    storeOptions.value = mockStores;
-    console.log('🏪 最终门店选项:', storeOptions.value);
+    const res: any = await request.get('/stores');
+    console.log('🏪 后端返回的原始数据:', res);
+    console.log('🏪 res.code:', res?.code);
+    console.log('🏪 res.data:', res?.data);
+    console.log('🏪 res.data.list:', res?.data?.list);
     
-    // 🔧 下面是原来的后端接口调用代码，暂时注释掉
-    /*
-    console.log('🏪 请求门店列表接口：/member/stores');
-    const res: any = await request.get('/member/stores');
-    console.log('🏪 门店列表 - 后端返回数据:', res);
-    console.log('🏪 res.data:', res.data);
-    console.log('🏪 Array.isArray(res.data):', Array.isArray(res.data));
-
-    if (res && res.data) {
-      if (Array.isArray(res.data.records)) {
-        console.log('✅ 使用 records 格式，数据:', res.data.records);
-        storeOptions.value = res.data.records;
-      } else if (Array.isArray(res.data.list)) {
-        console.log('✅ 使用 list 格式，数据:', res.data.list);
-        storeOptions.value = res.data.list;
-      } else if (Array.isArray(res.data)) {
-        console.log('✅ 使用直接数组格式，数据:', res.data);
-        storeOptions.value = res.data;
-      } else {
-        console.warn('⚠️ 无法识别的数据格式，res.data:', res.data);
-        storeOptions.value = [];
-      }
+    // 后端返回格式: {code: 200, message: "操作成功", data: {list: [...]}}
+    if (res && res.code === 200 && res.data && Array.isArray(res.data.list)) {
+      console.log('✅ 使用 data.list 格式');
+      console.log('✅ 门店数量:', res.data.list.length);
+      console.log('✅ 门店数据:', res.data.list);
+      
+      // 转换为前端需要的格式 {id, name}
+      storeOptions.value = res.data.list.map((store: any) => ({
+        id: store.id,
+        name: store.storeName || store.name
+      }));
+      
+      console.log('✅ 转换后的门店选项:', storeOptions.value);
+    } else if (Array.isArray(res)) {
+      console.log('✅ 后端直接返回数组');
+      storeOptions.value = res;
     } else {
-      console.warn('⚠️ 后端没有返回数据');
+      console.warn('⚠️ 无法识别的数据格式');
+      console.warn('⚠️ res 内容:', res);
       storeOptions.value = [];
     }
     
-    console.log('🏪 最终门店选项:', storeOptions.value);
-    */
+    console.log('🏪 最终门店选项数量:', storeOptions.value.length);
+    console.log('🏪 最终门店选项数据:', storeOptions.value);
+    console.log('🏪 ==========================================');
+    
+    if (storeOptions.value.length === 0) {
+      ElMessage.warning('未找到门店数据');
+    }
   } catch (error: any) {
     console.error('❌ 加载门店列表失败:', error);
     console.error('❌ 错误信息:', error.message);
-    
-    // 如果出错，使用模拟数据
-    const mockStores = [
-      { id: 1, name: '迈格健身 - 海淀店' },
-      { id: 2, name: '迈格健身 - 朝阳店' },
-    ];
-    console.log('⚠️ 接口失败，使用模拟数据:', mockStores);
-    storeOptions.value = mockStores;
+    console.error('❌ 错误响应:', error.response?.data);
+    storeOptions.value = [];
+    ElMessage.error('加载门店列表失败');
   }
 };
 
@@ -374,6 +394,8 @@ const handleReset = () => {
 
 // 选择教练
 const handleSelectCoach = (coach: any) => {
+  console.log('📌 选择教练:', coach);
+  console.log('📌 教练课时费字段 - hourlyRate:', coach.hourlyRate, 'price:', coach.price);
   selectedCoach.value = coach;
   formData.coachId = coach.id;
   formData.storeId = coach.storeId;
@@ -435,14 +457,48 @@ const handleDateChange = async () => {
 const submitBooking = async () => {
   if (!formRef.value) return;
 
+  console.log('🚀 ==================== 开始提交预约 ====================');
+  console.log('📋 当前表单数据:', JSON.parse(JSON.stringify(formData)));
+  console.log('👤 选中的教练:', selectedCoach.value);
+
   await formRef.value.validate(async (valid: boolean) => {
-    if (!valid) return;
+    console.log('✅ 表单验证结果:', valid);
+    if (!valid) {
+      console.error('❌ 表单验证失败，终止提交');
+      ElMessage.warning('请检查表单填写是否完整');
+      return;
+    }
 
     try {
       if (!formData.timeSlot) {
+        console.error('❌ 未选择时间段');
         ElMessage.warning('请选择时间段');
         return;
       }
+
+      console.log('⏰ 选择的原始时间段:', formData.timeSlot);
+      console.log('📅 选择的日期 (原始):', formData.workDate);
+      console.log('📅 选择的日期类型:', typeof formData.workDate);
+      
+      // 🔧 修复：将 Date 对象转换为 yyyy-MM-dd 格式的字符串
+      let workDateStr = '';
+      if (formData.workDate && (formData.workDate as unknown) instanceof Date) {
+        const dateObj = formData.workDate as unknown as Date;
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        workDateStr = `${year}-${month}-${day}`;
+      } else if (typeof formData.workDate === 'string') {
+        // 如果已经是字符串，直接使用
+        workDateStr = formData.workDate;
+      } else {
+        console.error('❌ 日期格式不正确:', formData.workDate);
+        ElMessage.error('日期格式不正确，请重新选择日期');
+        return;
+      }
+      
+      console.log('📅 格式化后的日期:', workDateStr);
+      console.log('⏱️ 预约时长:', formData.duration, '分钟');
 
       // 🔧 修改：构建符合后端要求的预约数据
       // 解析时间段，例如 "14:00:00"
@@ -450,28 +506,112 @@ const submitBooking = async () => {
         ? formData.timeSlot 
         : `${formData.timeSlot}:00`;
       
+      console.log('⏰ 格式化后的开始时间:', startTime);
+      
       // 计算结束时间
-      const endTime = calculateEndTime(formData.workDate, startTime, formData.duration).split(' ')[1];
+      const fullEndTime = calculateEndTime(workDateStr, startTime, formData.duration);
+      const endTime = fullEndTime.split(' ')[1]; // 提取时间部分 HH:mm:ss
+      
+      console.log('⏰ 计算出的完整结束时间:', fullEndTime);
+      console.log('⏰ 提取的结束时间 (endTime):', endTime);
 
+      // 构建完整的日期时间字符串 (yyyy-MM-dd HH:mm:ss)
+      const timeSlotStart = `${workDateStr} ${startTime}`;
+      const timeSlotEnd = fullEndTime;
+
+      console.log('📊 完整的开始时间 (timeSlotStart):', timeSlotStart);
+      console.log('📊 完整的结束时间 (timeSlotEnd):', timeSlotEnd);
+
+      // 计算预约价格
+      const hourlyRate = Number(getCoachHourlyRate()) || 0;
+      const totalPrice = hourlyRate * formData.duration / 60;
+      
+      console.log('💰 每小时费用:', hourlyRate);
+      console.log('💰 计算出的总价格:', totalPrice);
+
+      // 🔧 按照后端实际接口要求构建请求数据（根据 Postman 测试成功的格式）
       const bookingData = {
         coachId: formData.coachId,
         storeId: formData.storeId,
-        date: formData.workDate,
-        startTime: startTime,
-        endTime: endTime,
-        note: formData.remark || undefined,
+        date: workDateStr,                    // 日期：yyyy-MM-dd
+        startTime: startTime,                 // 开始时间：HH:mm:ss
+        endTime: endTime,                     // 结束时间：HH:mm:ss
+        note: formData.remark || undefined,   // 备注
       };
 
-      console.log('📤 提交预约数据:', bookingData);
+      console.log('📦 ==================== 最终提交数据 ====================');
+      console.log('📦 字段格式已根据 Postman 测试结果调整');
+      console.log(JSON.stringify(bookingData, null, 2));
+      console.log('📦 ========================================================');
 
-      await request.post('/member/appointments', bookingData);
+      console.log('🌐 请求接口: POST /member/appointments');
+      console.log('🔗 完整URL:', `${window.location.origin}/api/member/appointments`);
       
-      ElMessage.success('预约成功！请等待管理员确认');
-      bookingVisible.value = false;
-      handleDialogClose();
+      // 在发送前再次验证数据
+      console.log('🔍 数据验证:');
+      console.log('  - coachId:', bookingData.coachId, typeof bookingData.coachId);
+      console.log('  - storeId:', bookingData.storeId, typeof bookingData.storeId);
+      console.log('  - date:', bookingData.date, typeof bookingData.date);
+      console.log('  - startTime:', bookingData.startTime, typeof bookingData.startTime);
+      console.log('  - endTime:', bookingData.endTime, typeof bookingData.endTime);
+      console.log('  - note:', bookingData.note, typeof bookingData.note);
+      
+      // 检查是否有空值
+      const emptyFields = [];
+      if (!bookingData.coachId) emptyFields.push('coachId');
+      if (!bookingData.storeId) emptyFields.push('storeId');
+      if (!bookingData.date) emptyFields.push('date');
+      if (!bookingData.startTime) emptyFields.push('startTime');
+      if (!bookingData.endTime) emptyFields.push('endTime');
+      
+      if (emptyFields.length > 0) {
+        console.error('❌ 以下字段为空:', emptyFields);
+        ElMessage.error(`以下字段不能为空: ${emptyFields.join(', ')}`);
+        return;
+      }
+      
+      console.log('✅ 所有必填字段已填写');
+      
+      const response: any = await request.post('/member/appointments', bookingData);
+      
+      console.log('✅ 预约接口返回响应:', response);
+      console.log('✅ 响应数据类型:', typeof response);
+      console.log('✅ 响应数据完整内容:', JSON.stringify(response, null, 2));
+      
+      // 检查响应是否成功（兼容多种响应格式）
+      // 后端可能返回：
+      // 1. 标准格式：{code: 200, message: "...", data: {...}}
+      // 2. 直接返回数据对象：{appointmentNo: "...", id: 5, ...}
+      // 3. 包装在data中：{code: 200, data: {appointmentNo: "..."}}
+      const isSuccess = response?.code === 200 || 
+                       response?.success === true || 
+                       response?.data?.code === 200 ||
+                       response?.appointmentNo ||  // 直接返回预约对象
+                       response?.id;               // 包含id字段
+      
+      if (isSuccess) {
+        console.log('🎉 预约成功！');
+        console.log('📋 预约单号:', response.appointmentNo || response.data?.appointmentNo);
+        console.log('📋 预约ID:', response.id || response.data?.id);
+        ElMessage.success('预约成功！请等待管理员确认');
+        bookingVisible.value = false;
+        handleDialogClose();
+      } else {
+        console.warn('⚠️ 响应异常:', response);
+        ElMessage.warning('预约请求已发送，但响应格式异常，请检查后端');
+      }
     } catch (error: any) {
-      console.error('❌ 预约失败:', error);
-      ElMessage.error(error.message || '预约失败，请稍后重试');
+      console.error('❌ ==================== 预约失败 ====================');
+      console.error('❌ 错误对象:', error);
+      console.error('❌ 错误消息:', error.message);
+      console.error('❌ 错误响应:', error.response);
+      console.error('❌ 错误响应状态:', error.response?.status);
+      console.error('❌ 错误响应数据:', error.response?.data);
+      console.error('❌ ====================================================');
+      
+      // 显示更详细的错误信息
+      const errorMsg = error.response?.data?.message || error.message || '预约失败，请稍后重试';
+      ElMessage.error('预约失败：' + errorMsg);
     }
   });
 };
@@ -505,8 +645,10 @@ const handleDialogClose = () => {
 };
 
 onMounted(() => {
-  loadCoaches();
+  // 先加载门店列表
   loadStores();
+  // 再加载教练列表
+  loadCoaches();
 });
 </script>
 

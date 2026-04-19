@@ -63,149 +63,6 @@
       </el-col>
     </el-row>
 
-    <!-- 我的卡券 -->
-    <el-card class="section-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <h3>我的卡券</h3>
-          <el-button type="primary" link @click="handleViewAllCards">
-            查看全部
-          </el-button>
-        </div>
-      </template>
-      <el-tabs v-model="activeCardTab">
-        <el-tab-pane label="会员卡" name="membership">
-          <div v-if="membershipCards.length > 0" class="card-list">
-            <el-card 
-              v-for="card in membershipCards" 
-              :key="card.id" 
-              class="membership-card"
-              shadow="hover"
-            >
-              <div class="card-info">
-                <h4>{{ card.cardName }}</h4>
-                <p class="card-number">卡号：{{ card.cardNumber }}</p>
-                <p class="card-validity">
-                  有效期：{{ card.startDate }} - {{ card.endDate }}
-                </p>
-                <p class="card-remaining">
-                  剩余次数：{{ card.remainingTimes }} / {{ card.totalTimes }}
-                </p>
-                <el-tag :type="card.status === 1 ? 'success' : 'info'">
-                  {{ card.status === 1 ? '使用中' : '已过期' }}
-                </el-tag>
-              </div>
-            </el-card>
-          </div>
-          <el-empty v-else description="暂无会员卡" />
-        </el-tab-pane>
-        <el-tab-pane label="优惠券" name="coupon">
-          <div v-if="coupons.length > 0" class="coupon-list">
-            <el-card 
-              v-for="coupon in coupons" 
-              :key="coupon.id" 
-              class="coupon-card"
-              shadow="hover"
-            >
-              <div class="coupon-info">
-                <div class="coupon-amount">¥{{ coupon.amount }}</div>
-                <div class="coupon-detail">
-                  <h4>{{ coupon.name }}</h4>
-                  <p>{{ coupon.description }}</p>
-                  <p class="coupon-validity">
-                    有效期至：{{ coupon.endDate }}
-                  </p>
-                  <el-tag :type="coupon.status === 1 ? 'success' : 'info'" size="small">
-                    {{ coupon.status === 1 ? '可使用' : '已使用' }}
-                  </el-tag>
-                </div>
-              </div>
-            </el-card>
-          </div>
-          <el-empty v-else description="暂无优惠券" />
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
-
-    <!-- 我的课程 -->
-    <el-card class="section-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <h3>我的课程</h3>
-          <el-button type="primary" link @click="handleViewAllCourses">
-            查看全部
-          </el-button>
-        </div>
-      </template>
-      <el-tabs v-model="activeCourseTab">
-        <el-tab-pane label="今日课程" name="today">
-          <div v-if="todayCourses.length > 0" class="course-list">
-            <el-card 
-              v-for="course in todayCourses" 
-              :key="course.id" 
-              class="course-card"
-              shadow="hover"
-            >
-              <div class="course-info">
-                <h4>{{ course.courseName }}</h4>
-                <p><el-icon><Clock /></el-icon> {{ course.courseTime }}</p>
-                <p><el-icon><MapLocation /></el-icon> {{ course.location }}</p>
-                <el-button 
-                  type="danger" 
-                  size="small" 
-                  @click="handleCancelBooking(course.id)"
-                >
-                  取消预约
-                </el-button>
-              </div>
-            </el-card>
-          </div>
-          <el-empty v-else description="今日无课程" />
-        </el-tab-pane>
-        <el-tab-pane label="已预约" name="booked">
-          <div v-if="bookedCourses.length > 0" class="course-list">
-            <el-card 
-              v-for="course in bookedCourses" 
-              :key="course.id" 
-              class="course-card"
-              shadow="hover"
-            >
-              <div class="course-info">
-                <h4>{{ course.courseName }}</h4>
-                <p><el-icon><Clock /></el-icon> {{ course.courseTime }}</p>
-                <p><el-icon><MapLocation /></el-icon> {{ course.location }}</p>
-                <el-button 
-                  type="danger" 
-                  size="small" 
-                  @click="handleCancelBooking(course.id)"
-                >
-                  取消预约
-                </el-button>
-              </div>
-            </el-card>
-          </div>
-          <el-empty v-else description="暂无已预约课程" />
-        </el-tab-pane>
-        <el-tab-pane label="已完成" name="completed">
-          <div v-if="completedCourses.length > 0" class="course-list">
-            <el-card 
-              v-for="course in completedCourses" 
-              :key="course.id" 
-              class="course-card"
-              shadow="hover"
-            >
-              <div class="course-info">
-                <h4>{{ course.courseName }}</h4>
-                <p><el-icon><Clock /></el-icon> {{ course.courseTime }}</p>
-                <el-tag type="success">已完成</el-tag>
-              </div>
-            </el-card>
-          </div>
-          <el-empty v-else description="暂无已完成课程" />
-        </el-tab-pane>
-      </el-tabs>
-    </el-card>
-
     <!-- 我的预约 -->
     <el-card class="section-card" shadow="hover">
       <template #header>
@@ -330,13 +187,24 @@
     <el-dialog v-model="showEditDialog" title="编辑个人资料" width="500px">
       <el-form :model="editForm" label-width="100px">
         <el-form-item label="姓名">
-          <el-input v-model="editForm.name" />
+          <el-input v-model="editForm.realName" placeholder="请输入姓名" />
         </el-form-item>
         <el-form-item label="手机号">
-          <el-input v-model="editForm.phone" />
+          <el-input v-model="editForm.phone" placeholder="请输入手机号" />
         </el-form-item>
-        <el-form-item label="邮箱">
-          <el-input v-model="editForm.email" />
+        <el-form-item label="性别">
+          <el-radio-group v-model="editForm.gender">
+            <el-radio :label="1">男</el-radio>
+            <el-radio :label="2">女</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input 
+            v-model="editForm.remark" 
+            type="textarea" 
+            :rows="3"
+            placeholder="请输入备注信息"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -457,7 +325,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   User, Calendar, Ticket, Service, 
@@ -508,9 +376,10 @@ const appointmentDetailVisible = ref(false)
 const feedbackVisible = ref(false)
 const currentAppointment = ref<any>(null)
 const editForm = reactive({
-  name: '',
+  realName: '',
   phone: '',
-  email: ''
+  gender: 1,
+  remark: ''
 })
 const passwordForm = reactive({
   oldPassword: '',
@@ -540,19 +409,27 @@ const getMemberInfo = async () => {
     
     if ((res as any).code === 200 && (res as any).data) {
       const data = (res as any).data
-      memberInfo.name = data.name
+      memberInfo.id = data.id
+      memberInfo.name = data.realName || data.name
       memberInfo.phone = data.phone
       memberInfo.email = data.email
       memberInfo.avatar = data.avatar
-      memberInfo.level = data.level
-      memberInfo.expiryDate = data.expiryDate
+      memberInfo.level = data.level || 1
+      memberInfo.expiryDate = data.expiryDate || data.cardExpiryDate
+      
+      // 同步编辑表单
+      editForm.realName = memberInfo.name
+      editForm.phone = memberInfo.phone
+      editForm.gender = data.gender || 1
+      editForm.remark = data.remark || ''
     }
   } catch (error) {
     console.error('获取会员信息失败:', error)
+    ElMessage.error('获取会员信息失败')
   }
 }
 
-// 获取我的卡券
+// 获取我的卡券（模拟数据，实际需要根据后端API调整）
 const getMyCards = async () => {
   if (!userStore.userId) {
     console.error('userId 不存在，无法获取卡券');
@@ -560,22 +437,26 @@ const getMyCards = async () => {
   }
   
   try {
+    // 注意：这里需要根据实际后端API调整
+    // 如果后端没有专门的卡券接口，可能需要从会员详情中获取
     const res = await request({
-      url: `/members/${userStore.userId}/cards`,
+      url: `/members/${userStore.userId}`,
       method: 'get'
     })
     
     if ((res as any).code === 200 && (res as any).data) {
       const data = (res as any).data
-      membershipCards.value = data.membershipCards || []
+      // 根据实际返回数据结构调整
+      membershipCards.value = data.membershipCards || data.cards || []
       coupons.value = data.coupons || []
     }
   } catch (error) {
     console.error('获取卡券失败:', error)
+    // 不显示错误提示，避免影响用户体验
   }
 }
 
-// 获取我的课程
+// 获取我的课程（模拟数据，实际需要根据后端API调整）
 const getMyCourses = async () => {
   if (!userStore.userId) {
     console.error('userId 不存在，无法获取课程');
@@ -583,16 +464,39 @@ const getMyCourses = async () => {
   }
   
   try {
+    // 注意：这里需要根据实际后端API调整
+    // 可能通过预约接口获取课程信息
     const res = await request({
-      url: `/members/${userStore.userId}/courses`,
-      method: 'get'
+      url: `/member/appointments/my`,
+      method: 'get',
+      params: { page: 1, size: 50 }
     })
     
     if ((res as any).code === 200 && (res as any).data) {
       const data = (res as any).data
-      todayCourses.value = data.today || []
-      bookedCourses.value = data.booked || []
-      completedCourses.value = data.completed || []
+      let dataList = []
+      if (Array.isArray(data.records)) {
+        dataList = data.records
+      } else if (Array.isArray(data.list)) {
+        dataList = data.list
+      } else if (Array.isArray(data)) {
+        dataList = data
+      }
+      
+      // 根据预约状态分类
+      const now = new Date()
+      todayCourses.value = dataList.filter((item: any) => {
+        const courseDate = new Date(item.timeSlotStart || item.appointmentTime)
+        return courseDate.toDateString() === now.toDateString() && 
+               (item.status === 1 || item.status === 2)
+      })
+      
+      bookedCourses.value = dataList.filter((item: any) => {
+        const courseDate = new Date(item.timeSlotStart || item.appointmentTime)
+        return courseDate > now && (item.status === 0 || item.status === 1)
+      })
+      
+      completedCourses.value = dataList.filter((item: any) => item.status === 2)
     }
   } catch (error) {
     console.error('获取课程失败:', error)
@@ -607,51 +511,127 @@ const getAccessRecords = async () => {
   }
   
   try {
+    // 注意：这里需要根据实际后端API调整
+    // 如果后端没有签到记录接口，可能需要使用其他接口
     const res = await request({
-      url: `/members/${userStore.userId}/access-records`,
-      method: 'get',
-      params: { page: 1, pageSize: 10 }
-    })
-    
-    if ((res as any).code === 200 && (res as any).data) {
-      recentAccessRecords.value = (res as any).data.list || []
-    }
-  } catch (error) {
-    console.error('获取入场记录失败:', error)
-  }
-}
-
-// 加载我的预约
-const loadAppointments = async () => {
-  if (!userStore.userId) {
-    console.error('userId 不存在，无法获取预约');
-    return;
-  }
-  
-  try {
-    const res = await request({
-      url: `/member/appointments/my`,
+      url: `/members/${userStore.userId}/check-in-records`,
       method: 'get',
       params: { page: 1, size: 10 }
     })
     
     if ((res as any).code === 200 && (res as any).data) {
       const data = (res as any).data
-      let dataList = []
-      if (Array.isArray(data.records)) {
-        dataList = data.records
-      } else if (Array.isArray(data.list)) {
-        dataList = data.list
-      } else if (Array.isArray(data)) {
-        dataList = data
-      }
-      
-      appointments.value = dataList
-      pendingAppointments.value = dataList.filter((item: any) => item.status === 0 || item.status === 1)
-      completedAppointments.value = dataList.filter((item: any) => item.status === 2)
+      recentAccessRecords.value = (res as any).data.list || (res as any).data.records || []
     }
   } catch (error) {
-    console.error('加载预约列表失败:', error)
+    console.error('获取入场记录失败:', error)
+    // 不显示错误提示，可能是接口尚未实现
+  }
+}
+
+// 加载我的预约
+const loadAppointments = async () => {
+  console.log('🔍 ========== 开始加载预约数据 ==========');
+  console.log('👤 当前用户ID:', userStore.userId);
+  
+  if (!userStore.userId) {
+    console.error('❌ userId 不存在，无法获取预约');
+    ElMessage.warning('用户ID不存在，请先登录');
+    return;
+  }
+  
+  try {
+    console.log('📡 准备请求API: /api/member/appointments/my');
+    
+    const res = await request({
+      url: `/member/appointments/my`,
+      method: 'get',
+      params: { page: 1, size: 10 }
+    })
+    
+    console.log('📥 API响应结果:', res);
+    console.log('📊 响应类型:', typeof res);
+    console.log('📊 是否为数组:', Array.isArray(res));
+    
+    let dataList = []
+    
+    // request.ts 的响应拦截器已经返回了 response.data
+    // 所以 res 可能就是数据本身
+    if (Array.isArray(res)) {
+      // 后端直接返回数组
+      console.log('✅ 后端直接返回数组, 数量:', res.length);
+      dataList = res
+    } else if (res && typeof res === 'object') {
+      // 检查是否有 code 字段（标准格式）
+      const resData = res as any
+      if (resData.code !== undefined) {
+        console.log('📊 响应code:', resData.code);
+        console.log('📊 响应message:', resData.message);
+        console.log('📊 响应data:', resData.data);
+        
+        if (resData.code === 200) {
+          const data = resData.data
+          if (Array.isArray(data)) {
+            dataList = data
+          } else if (data && Array.isArray(data.records)) {
+            dataList = data.records
+          } else if (data && Array.isArray(data.list)) {
+            dataList = data.list
+          }
+        }
+      } else {
+        // 可能是其他对象格式
+        console.log('⚠️ 响应是对象但没有code字段');
+        console.log('📋 对象的所有键:', Object.keys(resData));
+        
+        if (Array.isArray(resData.records)) {
+          dataList = resData.records
+        } else if (Array.isArray(resData.list)) {
+          dataList = resData.list
+        } else if (Array.isArray(resData.items)) {
+          dataList = resData.items
+        }
+      }
+    }
+    
+    console.log('📋 最终解析的数据列表:', dataList);
+    console.log('📋 数据列表长度:', dataList.length);
+    
+    if (dataList.length > 0) {
+      console.log('📄 第一条数据示例:', JSON.stringify(dataList[0], null, 2));
+    }
+    
+    appointments.value = dataList
+    
+    // 按状态分类
+    pendingAppointments.value = dataList.filter((item: any) => {
+      console.log(`🔍 检查预约状态 - ID:${item.id || 'N/A'}, status:${item.status}`);
+      return item.status === 0 || item.status === 1;
+    })
+    console.log('⏳ 待确认预约数量:', pendingAppointments.value.length);
+    
+    completedAppointments.value = dataList.filter((item: any) => {
+      return item.status === 2;
+    })
+    console.log('✅ 已完成预约数量:', completedAppointments.value.length);
+    
+    console.log('📊 最终统计:');
+    console.log('  - 总预约数:', appointments.value.length);
+    console.log('  - 待确认数:', pendingAppointments.value.length);
+    console.log('  - 已完成数:', completedAppointments.value.length);
+    
+  } catch (error: any) {
+    console.error('❌ ========== 加载预约列表失败 ==========');
+    console.error('❌ 错误类型:', error.constructor.name);
+    console.error('❌ 错误消息:', error.message);
+    console.error('❌ 错误详情:', error);
+    if (error.response) {
+      console.error('❌ 响应状态:', error.response.status);
+      console.error('❌ 响应数据:', error.response.data);
+    }
+    ElMessage.error('加载预约列表失败: ' + (error.message || '未知错误'));
+  } finally {
+    console.log('🏁 ========== 预约数据加载完成 ==========');
   }
 }
 
@@ -705,7 +685,8 @@ const handleScanCode = () => {
 }
 
 const handleBookCourse = () => {
-  ElMessage.info('课程预约功能开发中...')
+  // 跳转到教练预约页面
+  window.location.href = '/member/coach-booking'
 }
 
 const handleBuyCard = () => {
@@ -773,7 +754,7 @@ const handleCancelAppointment = async (item: any) => {
       method: 'post',
       data: {
         cancelReason: '会员主动取消',
-        cancelBy: 1
+        cancelBy: userStore.userId
       }
     })
 
@@ -824,24 +805,44 @@ const submitFeedback = async () => {
 
 // 更新资料
 const handleUpdateProfile = async () => {
+  if (!userStore.userId) {
+    ElMessage.error('用户ID不存在')
+    return
+  }
+  
   try {
     await request({
       url: `/members/${userStore.userId}`,
       method: 'put',
-      data: editForm
+      data: {
+        realName: editForm.realName,
+        phone: editForm.phone,
+        gender: editForm.gender,
+        remark: editForm.remark
+      }
     })
     ElMessage.success('更新成功')
     showEditDialog.value = false
     getMemberInfo()
-  } catch (error) {
-    ElMessage.error('更新失败')
+  } catch (error: any) {
+    ElMessage.error(error.message || '更新失败')
   }
 }
 
 // 修改密码
 const handleChangePassword = async () => {
+  if (!passwordForm.oldPassword || !passwordForm.newPassword || !passwordForm.confirmPassword) {
+    ElMessage.warning('请填写所有密码字段')
+    return
+  }
+  
   if (passwordForm.newPassword !== passwordForm.confirmPassword) {
     ElMessage.error('两次输入的密码不一致')
+    return
+  }
+  
+  if (passwordForm.newPassword.length < 6) {
+    ElMessage.warning('新密码长度不能少于6位')
     return
   }
   
@@ -860,17 +861,33 @@ const handleChangePassword = async () => {
     passwordForm.oldPassword = ''
     passwordForm.newPassword = ''
     passwordForm.confirmPassword = ''
-  } catch (error) {
-    ElMessage.error('密码修改失败')
+  } catch (error: any) {
+    ElMessage.error(error.message || '密码修改失败')
   }
 }
 
 onMounted(() => {
   getMemberInfo()
-  getMyCards()
-  getMyCourses()
   getAccessRecords()
   loadAppointments()
+  
+  // 监听来自首页的事件
+  const handleOpenPasswordDialog = () => {
+    showPasswordDialog.value = true
+  }
+  window.addEventListener('open-password-dialog', handleOpenPasswordDialog)
+  
+  // 保存引用以便清理
+  ;(window as any)._openPasswordDialogHandler = handleOpenPasswordDialog
+})
+
+onUnmounted(() => {
+  // 清理事件监听器
+  const handler = (window as any)._openPasswordDialogHandler
+  if (handler) {
+    window.removeEventListener('open-password-dialog', handler)
+    delete (window as any)._openPasswordDialogHandler
+  }
 })
 </script>
 
@@ -1021,30 +1038,6 @@ onMounted(() => {
   margin: 0.3rem 0;
   color: #909399;
   font-size: 14px;
-}
-
-.course-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 1rem;
-}
-
-.course-card {
-  border-radius: 8px;
-}
-
-.course-info h4 {
-  margin: 0 0 1rem 0;
-  color: #303133;
-}
-
-.course-info p {
-  margin: 0.5rem 0;
-  color: #606266;
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 :deep(.el-tabs__header) {
