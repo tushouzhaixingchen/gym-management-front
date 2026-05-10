@@ -33,32 +33,25 @@
 
     <!-- 快捷操作 -->
     <el-row :gutter="20" class="quick-actions">
-      <el-col :span="6">
-        <el-card shadow="hover" class="action-card" @click="handleScanCode">
-          <el-icon :size="40" color="#409EFF"><Monitor /></el-icon>
-          <h3>扫码入场</h3>
-          <p>快速入场健身</p>
-        </el-card>
-      </el-col>
-      <el-col :span="6">
+      <el-col :span="8">
         <el-card shadow="hover" class="action-card" @click="handleBookCourse">
           <el-icon :size="40" color="#67C23A"><Calendar /></el-icon>
           <h3>课程预约</h3>
           <p>预约健身课程</p>
         </el-card>
       </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="action-card" @click="handleBuyCard">
-          <el-icon :size="40" color="#E6A23C"><Ticket /></el-icon>
-          <h3>购买卡券</h3>
-          <p>办理会员卡</p>
+      <el-col :span="8">
+        <el-card shadow="hover" class="action-card" @click="handleViewAllAppointments">
+          <el-icon :size="40" color="#409EFF"><List /></el-icon>
+          <h3>我的预约</h3>
+          <p>查看预约记录</p>
         </el-card>
       </el-col>
-      <el-col :span="6">
-        <el-card shadow="hover" class="action-card" @click="handleContactService">
-          <el-icon :size="40" color="#909399"><Service /></el-icon>
-          <h3>联系客服</h3>
-          <p>在线咨询</p>
+      <el-col :span="8">
+        <el-card shadow="hover" class="action-card" @click="handleViewOrders">
+          <el-icon :size="40" color="#E6A23C"><Document /></el-icon>
+          <h3>我的订单</h3>
+          <p>查看订单记录</p>
         </el-card>
       </el-col>
     </el-row>
@@ -77,7 +70,7 @@
         <el-tab-pane label="全部" name="all">
           <div v-if="appointments.length > 0" class="appointment-list">
             <el-card 
-              v-for="item in appointments.slice(0, 3)" 
+              v-for="item in appointments" 
               :key="item.id" 
               class="appointment-item"
               shadow="hover"
@@ -104,7 +97,7 @@
         <el-tab-pane label="待确认" name="pending">
           <div v-if="pendingAppointments.length > 0" class="appointment-list">
             <el-card 
-              v-for="item in pendingAppointments.slice(0, 3)" 
+              v-for="item in pendingAppointments" 
               :key="item.id" 
               class="appointment-item"
               shadow="hover"
@@ -125,10 +118,60 @@
           </div>
           <el-empty v-else description="暂无待确认预约" />
         </el-tab-pane>
+        <el-tab-pane label="已确认未支付" name="confirmed">
+          <div v-if="confirmedUnpaidAppointments.length > 0" class="appointment-list">
+            <el-card 
+              v-for="item in confirmedUnpaidAppointments" 
+              :key="item.id" 
+              class="appointment-item"
+              shadow="hover"
+              @click="handleViewAppointmentDetail(item)"
+            >
+              <div class="appointment-info">
+                <div class="appointment-header">
+                  <span class="appointment-no">{{ item.appointmentNo }}</span>
+                  <el-tag type="warning">已确认未支付</el-tag>
+                </div>
+                <div class="appointment-detail">
+                  <p><strong>教练：</strong>{{ item.coachName }}</p>
+                  <p><strong>时间：</strong>{{ item.timeSlotStart }}</p>
+                  <p><strong>门店：</strong>{{ item.storeName }}</p>
+                  <p><strong>价格：</strong>¥{{ item.price }}</p>
+                </div>
+              </div>
+            </el-card>
+          </div>
+          <el-empty v-else description="暂无已确认未支付预约" />
+        </el-tab-pane>
+        <el-tab-pane label="已支付" name="paid">
+          <div v-if="confirmedPaidAppointments.length > 0" class="appointment-list">
+            <el-card 
+              v-for="item in confirmedPaidAppointments" 
+              :key="item.id" 
+              class="appointment-item"
+              shadow="hover"
+              @click="handleViewAppointmentDetail(item)"
+            >
+              <div class="appointment-info">
+                <div class="appointment-header">
+                  <span class="appointment-no">{{ item.appointmentNo }}</span>
+                  <el-tag type="success">已支付</el-tag>
+                </div>
+                <div class="appointment-detail">
+                  <p><strong>教练：</strong>{{ item.coachName }}</p>
+                  <p><strong>时间：</strong>{{ item.timeSlotStart }}</p>
+                  <p><strong>门店：</strong>{{ item.storeName }}</p>
+                  <p><strong>价格：</strong>¥{{ item.price }}</p>
+                </div>
+              </div>
+            </el-card>
+          </div>
+          <el-empty v-else description="暂无已支付预约" />
+        </el-tab-pane>
         <el-tab-pane label="已完成" name="completed">
           <div v-if="completedAppointments.length > 0" class="appointment-list">
             <el-card 
-              v-for="item in completedAppointments.slice(0, 3)" 
+              v-for="item in completedAppointments" 
               :key="item.id" 
               class="appointment-item"
               shadow="hover"
@@ -294,6 +337,13 @@
         >
           评价
         </el-button>
+        <el-button 
+          v-if="(currentAppointment.status === 0 || currentAppointment.status === 1) && currentAppointment.payStatus === 0" 
+          type="success" 
+          @click="handlePayAppointment(currentAppointment)"
+        >
+          支付预约
+        </el-button>
       </template>
     </el-dialog>
 
@@ -328,13 +378,13 @@
 import { ref, reactive, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
-  User, Calendar, Ticket, Service, 
-  Clock, Edit, Lock, Monitor, MapLocation 
+  User, Calendar, Clock, Edit, Lock, List, Document
 } from '@element-plus/icons-vue'
 import { useUserStore } from '../stores/user'
 import request from '@/utils/request'
-import { Star } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
 
+const router = useRouter()
 const userStore = useUserStore()
 const defaultAvatar = ''
 
@@ -366,7 +416,9 @@ const recentAccessRecords = ref<any[]>([])
 // 预约相关
 const activeAppointmentTab = ref('all')
 const appointments = ref<any[]>([])
-const pendingAppointments = ref<any[]>([])
+const pendingAppointments = ref<any[]>([])  // 待确认 status=0
+const confirmedUnpaidAppointments = ref<any[]>([])  // 已确认未支付 status=1, payStatus=0
+const confirmedPaidAppointments = ref<any[]>([])  // 已确认已支付 status=1, payStatus=1
 const completedAppointments = ref<any[]>([])
 
 // 对话框
@@ -606,9 +658,19 @@ const loadAppointments = async () => {
     // 按状态分类
     pendingAppointments.value = dataList.filter((item: any) => {
       console.log(`🔍 检查预约状态 - ID:${item.id || 'N/A'}, status:${item.status}`);
-      return item.status === 0 || item.status === 1;
+      return item.status === 0;  // 只显示待确认
     })
     console.log('⏳ 待确认预约数量:', pendingAppointments.value.length);
+    
+    confirmedUnpaidAppointments.value = dataList.filter((item: any) => {
+      return item.status === 1 && item.payStatus === 0;  // 已确认但未支付
+    })
+    console.log('💰 已确认未支付预约数量:', confirmedUnpaidAppointments.value.length);
+    
+    confirmedPaidAppointments.value = dataList.filter((item: any) => {
+      return item.status === 1 && item.payStatus === 1;  // 已确认且已支付
+    })
+    console.log('✅ 已确认已支付预约数量:', confirmedPaidAppointments.value.length);
     
     completedAppointments.value = dataList.filter((item: any) => {
       return item.status === 2;
@@ -618,6 +680,8 @@ const loadAppointments = async () => {
     console.log('📊 最终统计:');
     console.log('  - 总预约数:', appointments.value.length);
     console.log('  - 待确认数:', pendingAppointments.value.length);
+    console.log('  - 已确认未支付数:', confirmedUnpaidAppointments.value.length);
+    console.log('  - 已支付数:', confirmedPaidAppointments.value.length);
     console.log('  - 已完成数:', completedAppointments.value.length);
     
   } catch (error: any) {
@@ -680,21 +744,9 @@ const calculateDuration = (start: string, end: string) => {
 }
 
 // 快捷操作
-const handleScanCode = () => {
-  ElMessage.info('扫码功能开发中...')
-}
-
 const handleBookCourse = () => {
   // 跳转到教练预约页面
   window.location.href = '/member/coach-booking'
-}
-
-const handleBuyCard = () => {
-  ElMessage.info('购买卡券功能开发中...')
-}
-
-const handleContactService = () => {
-  ElMessage.info('客服功能开发中...')
 }
 
 const handleViewAllCards = () => {
@@ -726,6 +778,11 @@ const handleCancelBooking = (courseId: number) => {
 
 const handleViewAllRecords = () => {
   ElMessage.info('入场记录列表功能开发中...')
+}
+
+// 查看全部订单
+const handleViewOrders = () => {
+  router.push('/member/orders')
 }
 
 // 查看全部预约
@@ -764,6 +821,61 @@ const handleCancelAppointment = async (item: any) => {
   } catch (error: any) {
     if (error !== 'cancel') {
       ElMessage.error(error.message || '取消失败')
+    }
+  }
+}
+
+// 支付预约
+const handlePayAppointment = async (item: any) => {
+  try {
+    const { value: paymentMethod } = await ElMessageBox.prompt(
+      '请选择支付方式',
+      '支付预约',
+      {
+        confirmButtonText: '支付宝',
+        cancelButtonText: '微信',
+        inputPattern: /.*/,
+        inputErrorMessage: '请选择支付方式',
+        showCancelButton: true,
+        showConfirmButton: true,
+        distinguishCancelAndClose: true,
+        beforeClose: async (action, instance, done) => {
+          if (action === 'confirm') {
+            instance.confirmButtonLoading = true
+            instance.confirmButtonText = '支付宝支付中...'
+            // 模拟支付过程
+            await new Promise(resolve => setTimeout(resolve, 500))
+            done()
+          } else if (action === 'cancel') {
+            instance.confirmButtonLoading = true
+            instance.confirmButtonText = '微信支付中...'
+            // 模拟支付过程
+            await new Promise(resolve => setTimeout(resolve, 500))
+            done()
+          } else {
+            done()
+          }
+        }
+      }
+    )
+
+    // 根据用户选择确定支付方式
+    const method = paymentMethod === '支付宝' ? 'ALIPAY' : 'WECHAT'
+
+    await request({
+      url: `/member/appointments/${item.id}/pay`,
+      method: 'post',
+      data: {
+        paymentMethod: method
+      }
+    })
+
+    ElMessage.success('支付成功')
+    appointmentDetailVisible.value = false
+    loadAppointments()
+  } catch (error: any) {
+    if (error !== 'cancel' && error !== 'close') {
+      ElMessage.error(error.message || '支付失败')
     }
   }
 }

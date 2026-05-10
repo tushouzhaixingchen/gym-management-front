@@ -203,11 +203,69 @@
         <el-button type="primary" @click="handleCheckInSubmit">确定</el-button>
       </template>
     </el-dialog>
+
+    <!-- 密码显示对话框 -->
+    <el-dialog
+      v-model="passwordDialogVisible"
+      title="会员创建成功"
+      width="450px"
+      :close-on-click-modal="false"
+      :show-close="false"
+      @close="closePasswordDialog"
+    >
+      <div class="password-dialog-content">
+        <el-alert
+          title="请妥善保管以下密码信息"
+          type="warning"
+          :closable="false"
+          show-icon
+          style="margin-bottom: 20px"
+        />
+        <div class="password-info">
+          <div class="info-item">
+            <span class="label">会员姓名：</span>
+            <span class="value">{{ passwordData.realName }}</span>
+          </div>
+          <div class="info-item">
+            <span class="label">手机号：</span>
+            <span class="value">{{ passwordData.phone }}</span>
+          </div>
+          <div class="info-item password-item">
+            <span class="label">初始密码：</span>
+            <span class="value password-value">{{ passwordData.password }}</span>
+            <el-button 
+              type="primary" 
+              link 
+              @click="copyPassword"
+              style="margin-left: 10px"
+            >
+              复制
+            </el-button>
+          </div>
+        </div>
+        <el-divider />
+        <div class="countdown-info">
+          <el-progress 
+            :percentage="countdownProgress" 
+            :color="countdownColor"
+            :stroke-width="8"
+          />
+          <p class="countdown-text">
+            窗口将在 <span class="countdown-number">{{ countdownSeconds }}</span> 秒后自动关闭
+          </p>
+        </div>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="passwordDialogVisible = false">
+          我知道了
+        </el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Refresh, Plus, Edit, Delete, Check } from '@element-plus/icons-vue'
 import request from '@/utils/request'
@@ -266,6 +324,28 @@ const checkInForm = ref({
   storeId: null,
   checkInMethod: 'qrcode',
   remark: ''
+})
+
+// 密码显示对话框
+const passwordDialogVisible = ref(false)
+const passwordData = ref({
+  realName: '',
+  phone: '',
+  password: ''
+})
+const countdownSeconds = ref(10)
+const countdownTimer = ref<number | null>(null)
+
+// 计算倒计时进度
+const countdownProgress = computed(() => {
+  return ((10 - countdownSeconds.value) / 10) * 100
+})
+
+// 倒计时进度条颜色
+const countdownColor = computed(() => {
+  if (countdownSeconds.value > 5) return '#67C23A'
+  if (countdownSeconds.value > 2) return '#E6A23C'
+  return '#F56C6C'
 })
 
 // 获取数据
@@ -460,7 +540,17 @@ const handleSubmit = async () => {
       }) as any
 
       if (res.code === 200) {
-        ElMessage.success(formData.value.id ? '更新成功' : '新增成功')
+        // 如果是新增操作且返回了临时密码，显示密码对话框
+        if (!formData.value.id && res.data && res.data.temporaryPassword) {
+          passwordData.value = {
+            realName: formData.value.realName,
+            phone: formData.value.phone,
+            password: res.data.temporaryPassword
+          }
+          showPasswordDialog()
+        } else {
+          ElMessage.success(formData.value.id ? '更新成功' : '新增成功')
+        }
         dialogVisible.value = false
         fetchData()
       } else {
@@ -487,6 +577,60 @@ const handleDialogClose = () => {
     remark: '',
     cardType: 'period',
     joinDate: ''
+  }
+}
+
+// 显示密码对话框并开始倒计时
+const showPasswordDialog = () => {
+  passwordDialogVisible.value = true
+  countdownSeconds.value = 10
+  
+  // 清除之前的定时器
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+  }
+  
+  // 开始倒计时
+  countdownTimer.value = window.setInterval(() => {
+    countdownSeconds.value--
+    
+    if (countdownSeconds.value <= 0) {
+      // 倒计时结束，关闭对话框
+      closePasswordDialog()
+    }
+  }, 1000)
+}
+
+// 关闭密码对话框
+const closePasswordDialog = () => {
+  passwordDialogVisible.value = false
+  if (countdownTimer.value) {
+    clearInterval(countdownTimer.value)
+    countdownTimer.value = null
+  }
+  countdownSeconds.value = 10
+}
+
+// 复制密码到剪贴板
+const copyPassword = async () => {
+  try {
+    await navigator.clipboard.writeText(passwordData.value.password)
+    ElMessage.success('密码已复制到剪贴板')
+  } catch (error) {
+    // 降级方案：使用传统方法
+    const textarea = document.createElement('textarea')
+    textarea.value = passwordData.value.password
+    textarea.style.position = 'fixed'
+    textarea.style.opacity = '0'
+    document.body.appendChild(textarea)
+    textarea.select()
+    try {
+      document.execCommand('copy')
+      ElMessage.success('密码已复制到剪贴板')
+    } catch (err) {
+      ElMessage.error('复制失败，请手动复制')
+    }
+    document.body.removeChild(textarea)
   }
 }
 
@@ -519,5 +663,71 @@ onMounted(() => {
 .pagination-container {
   display: flex;
   justify-content: flex-end;
+}
+
+/* 密码对话框样式 */
+.password-dialog-content {
+  padding: 10px 0;
+}
+
+.password-info {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 15px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item .label {
+  color: #606266;
+  min-width: 80px;
+  font-weight: 500;
+}
+
+.info-item .value {
+  color: #303133;
+  flex: 1;
+}
+
+.password-item {
+  background: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  border: 1px solid #dcdfe6;
+}
+
+.password-value {
+  font-family: 'Courier New', monospace;
+  font-size: 16px;
+  font-weight: bold;
+  color: #E6A23C;
+  letter-spacing: 2px;
+}
+
+.countdown-info {
+  text-align: center;
+}
+
+.countdown-text {
+  margin-top: 12px;
+  color: #606266;
+  font-size: 14px;
+}
+
+.countdown-number {
+  color: #F56C6C;
+  font-weight: bold;
+  font-size: 18px;
+  margin: 0 4px;
 }
 </style>

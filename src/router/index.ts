@@ -95,6 +95,18 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: '会员首页', requiresAuth: false, roles: ['MEMBER'] }
   },
   {
+    path: '/member/courses',
+    name: 'CourseEnroll',
+    component: () => import('@/views/CourseEnrollView.vue'),
+    meta: { title: '报名课程', requiresAuth: true, roles: ['MEMBER'] }
+  },
+  {
+    path: '/member/orders',
+    name: 'OrderManage',
+    component: () => import('@/views/OrderManageView.vue'),
+    meta: { title: '我的订单', requiresAuth: true, roles: ['MEMBER'] }
+  },
+  {
     path: '/member/coach-booking',
     name: 'MemberCoachBooking',
     component: () => import('@/views/MemberCoachBookingView.vue'),

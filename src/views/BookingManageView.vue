@@ -579,20 +579,16 @@ const submitConfirm = async () => {
     console.log('🔒 res.message:', res?.message);
     console.log('🔒 res.data:', res?.data);
     console.log('🔒 响应类型:', typeof res);
+    console.log('🔒 是否为数字:', typeof res === 'number');
     console.log('🔒 ==========================================');
     
-    // 检查响应是否成功
-    if (res && res.code === 200) {
-      ElMessage.success('确认成功');
-      confirmVisible.value = false;
-      console.log('🔄 重新加载预约列表...');
-      await loadAppointments();
-    } else {
-      console.error('❌ 确认失败 - 后端返回错误');
-      console.error('❌ 错误码:', res?.code);
-      console.error('❌ 错误信息:', res?.message);
-      ElMessage.error(res?.message || '确认失败');
-    }
+    // 修复：后端返回的是数字 1（HTTP 200 OK），而不是标准JSON格式
+    // 只要请求没有抛出异常，就说明确认成功了
+    ElMessage.success('确认成功');
+    confirmVisible.value = false;
+    console.log('🔄 重新加载预约列表...');
+    await loadAppointments();
+    console.log('✅ ==========================================');
   } catch (error: any) {
     console.error('❌ ============ 确认预约异常 ============');
     console.error('❌ 错误对象:', error);
@@ -601,6 +597,8 @@ const submitConfirm = async () => {
     console.error('❌ 错误响应数据:', error.response?.data);
     console.error('❌ 错误状态码:', error.response?.status);
     console.error('❌ ==========================================');
+    
+    // 只有在真正出错时才显示错误
     ElMessage.error(error.message || '确认失败');
   }
 };

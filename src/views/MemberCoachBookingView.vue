@@ -597,8 +597,10 @@ const submitBooking = async () => {
         bookingVisible.value = false;
         handleDialogClose();
       } else {
-        console.warn('⚠️ 响应异常:', response);
-        ElMessage.warning('预约请求已发送，但响应格式异常，请检查后端');
+        console.warn('⚠️ 预约失败:', response);
+        // 显示后端返回的具体错误信息
+        const errorMsg = response?.message || response?.data?.message || '预约失败，请稍后重试';
+        ElMessage.warning(errorMsg);
       }
     } catch (error: any) {
       console.error('❌ ==================== 预约失败 ====================');

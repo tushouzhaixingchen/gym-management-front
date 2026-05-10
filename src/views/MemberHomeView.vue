@@ -28,57 +28,6 @@
       </el-col>
     </el-row>
     
-    <!-- 数据统计 -->
-    <el-row :gutter="20" style="margin-top: 20px;">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #409EFF;">
-            <el-icon :size="32"><Calendar /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.remainingCourses }}</div>
-            <div class="stat-label">剩余课程</div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #67C23A;">
-            <el-icon :size="32"><Ticket /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.coupons }}</div>
-            <div class="stat-label">优惠券</div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #E6A23C;">
-            <el-icon :size="32"><Clock /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.entryCount }}</div>
-            <div class="stat-label">入场次数</div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: #F56C6C;">
-            <el-icon :size="32"><Trophy /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-value">{{ stats.memberLevel }}</div>
-            <div class="stat-label">当前等级</div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-    
     <!-- 快捷操作 -->
     <el-card class="section-card" shadow="hover" style="margin-top: 20px;">
       <template #header>
@@ -88,105 +37,123 @@
       </template>
       <el-row :gutter="20">
         <el-col :span="6">
-          <el-button type="primary" style="width: 100%;" size="large" @click="handleBookCourse">
-            <el-icon><VideoPlay /></el-icon>
+          <el-button type="primary" style="width: 100%;" size="large" @click="handleEnrollCourse">
+            <el-icon><Calendar /></el-icon>
+            报名课程
+          </el-button>
+        </el-col>
+        <el-col :span="6">
+          <el-button type="success" style="width: 100%;" size="large" @click="handleBookCourse">
+            <el-icon><VideoCamera /></el-icon>
             预约教练
           </el-button>
         </el-col>
         <el-col :span="6">
-          <el-button type="success" style="width: 100%;" size="large" @click="handleBuyCard">
-            <el-icon><Ticket /></el-icon>
-            购买卡券
-          </el-button>
-        </el-col>
-        <el-col :span="6">
-          <el-button type="warning" style="width: 100%;" size="large" @click="handleScanEntry">
-            <el-icon><VideoCamera /></el-icon>
-            扫码入场
-          </el-button>
-        </el-col>
-        <el-col :span="6">
-          <el-button type="info" style="width: 100%;" size="large" @click="handleContactService">
-            <el-icon><Service /></el-icon>
-            联系客服
-          </el-button>
-        </el-col>
-      </el-row>
-      <el-row :gutter="20" style="margin-top: 20px;">
-        <el-col :span="6">
-          <el-button type="primary" plain style="width: 100%;" size="large" @click="handleViewAnnouncements">
+          <el-button type="warning" style="width: 100%;" size="large" @click="handleViewAnnouncements">
             <el-icon><Bell /></el-icon>
             查看公告
           </el-button>
         </el-col>
-      </el-row>
-    </el-card>
-    
-    <!-- 个人中心 -->
-    <el-card class="section-card" shadow="hover" style="margin-top: 20px;">
-      <template #header>
-        <div class="card-header">
-          <h4>个人中心</h4>
-        </div>
-      </template>
-      <el-row :gutter="20">
-        <el-col :span="8">
-          <el-button type="primary" plain style="width: 100%;" size="large" @click="handleViewProfile">
+        <el-col :span="6">
+          <el-button type="info" style="width: 100%;" size="large" @click="handleMyProfile">
             <el-icon><User /></el-icon>
-            个人信息
-          </el-button>
-        </el-col>
-        <el-col :span="8">
-          <el-button type="success" plain style="width: 100%;" size="large" @click="handleChangePassword">
-            <el-icon><Lock /></el-icon>
-            修改密码
-          </el-button>
-        </el-col>
-        <el-col :span="8">
-          <el-button type="warning" plain style="width: 100%;" size="large" @click="handleMyBooking">
-            <el-icon><Calendar /></el-icon>
-            我的预约
+            个人中心
           </el-button>
         </el-col>
       </el-row>
     </el-card>
     
-    <!-- 今日课程 -->
+    <!-- 最近预约 -->
     <el-card class="section-card" shadow="hover" style="margin-top: 20px;">
       <template #header>
         <div class="card-header">
-          <h4>今日课程</h4>
-          <el-button v-if="!isGuest" type="primary" link>查看全部</el-button>
+          <h4>最近预约</h4>
+          <el-button v-if="!isGuest" type="primary" link @click="handleViewAllAppointments">查看全部</el-button>
         </div>
       </template>
-      <el-empty v-if="todayCourses.length === 0" description="无" />
-      <el-timeline v-else>
-        <el-timeline-item 
-          v-for="(course, index) in todayCourses" 
-          :key="index"
-          :timestamp="course.time" 
-          placement="top"
+      <div v-if="isGuest" class="guest-tip">
+        <el-empty description="登录后即可查看您的预约记录" />
+      </div>
+      <div v-else-if="loading" class="loading-tip">
+        <el-skeleton :rows="3" animated />
+      </div>
+      <div v-else-if="recentAppointments.length === 0" class="empty-tip">
+        <el-empty description="暂无预约记录">
+          <el-button type="primary" @click="handleBookCourse">立即预约</el-button>
+        </el-empty>
+      </div>
+      <div v-else class="appointment-list">
+        <el-card 
+          v-for="item in recentAppointments" 
+          :key="item.id" 
+          class="appointment-item"
+          shadow="hover"
+          @click="handleViewAppointmentDetail(item)"
         >
-          <el-card>
-            <h4>{{ course.name }}</h4>
-            <p>教练：{{ course.coach }} | 地点：{{ course.location }}</p>
-          </el-card>
-        </el-timeline-item>
-      </el-timeline>
+          <div class="appointment-info">
+            <div class="appointment-header">
+              <span class="appointment-no">{{ item.appointmentNo }}</span>
+              <el-tag :type="getAppointmentStatusType(item.status)">
+                {{ getAppointmentStatusText(item.status) }}
+              </el-tag>
+            </div>
+            <div class="appointment-detail">
+              <p><strong>教练：</strong>{{ item.coachName }}</p>
+              <p><strong>时间：</strong>{{ formatTime(item.timeSlotStart) }}</p>
+              <p><strong>门店：</strong>{{ item.storeName }}</p>
+            </div>
+          </div>
+        </el-card>
+      </div>
+    </el-card>
+    
+    <!-- 最新公告 -->
+    <el-card class="section-card" shadow="hover" style="margin-top: 20px;">
+      <template #header>
+        <div class="card-header">
+          <h4>最新公告</h4>
+          <el-button type="primary" link @click="handleViewAllAnnouncements">查看全部</el-button>
+        </div>
+      </template>
+      <div v-if="loadingAnnouncements" class="loading-tip">
+        <el-skeleton :rows="3" animated />
+      </div>
+      <div v-else-if="recentAnnouncements.length === 0" class="empty-tip">
+        <el-empty description="暂无公告" />
+      </div>
+      <div v-else class="announcement-list">
+        <el-card 
+          v-for="item in recentAnnouncements" 
+          :key="item.id" 
+          class="announcement-item"
+          shadow="hover"
+          @click="handleViewAnnouncementDetail(item)"
+        >
+          <div class="announcement-header">
+            <el-tag :type="getPriorityType(item.priority)" size="small">
+              {{ getPriorityText(item.priority) }}
+            </el-tag>
+            <h5 class="announcement-title">{{ item.title }}</h5>
+          </div>
+          <div class="announcement-footer">
+            <span class="publish-time">发布时间：{{ formatDate(item.publishTime || item.createdAt) }}</span>
+            <el-button type="primary" text size="small">查看详情</el-button>
+          </div>
+        </el-card>
+      </div>
     </el-card>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { 
-  Calendar, Ticket, Clock, Trophy, 
-  VideoPlay, VideoCamera, Service,
-  User, Lock, SwitchButton, Bell
+  Calendar, Bell, User, SwitchButton, VideoCamera
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '@/utils/request'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -196,36 +163,6 @@ const isGuest = computed(() => !userStore.token)
 
 // 游客模式显示"游客"，登录模式显示用户名
 const userName = computed(() => isGuest.value ? '游客' : (userStore.name || '会员'))
-
-// 统计数据：游客模式全部为0，登录模式显示实际数据
-const stats = computed(() => {
-  if (isGuest.value) {
-    return {
-      remainingCourses: 0,
-      coupons: 0,
-      entryCount: 0,
-      memberLevel: '未登录'
-    }
-  }
-  // 登录模式：可以从接口获取数据，这里暂时使用固定值
-  return {
-    remainingCourses: 12,
-    coupons: 3,
-    entryCount: 28,
-    memberLevel: '黄金会员'
-  }
-})
-
-// 今日课程：游客模式显示无，登录模式显示课程列表
-const todayCourses = computed(() => {
-  if (isGuest.value) {
-    return []
-  }
-  return [
-    { time: '09:00 - 10:00', name: '瑜伽基础课', coach: '李老师', location: '瑜伽室 1' },
-    { time: '18:00 - 19:30', name: '动感单车', coach: '王教练', location: '单车房' }
-  ]
-})
 
 const currentDate = computed(() => {
   const now = new Date()
@@ -237,6 +174,14 @@ const currentDate = computed(() => {
   })
 })
 
+// 最近预约数据
+const recentAppointments = ref<any[]>([])
+const loading = ref(false)
+
+// 最新公告数据
+const recentAnnouncements = ref<any[]>([])
+const loadingAnnouncements = ref(false)
+
 // 游客模式：点击任何功能都跳转登录页
 const requireLogin = () => {
   if (isGuest.value) {
@@ -247,59 +192,207 @@ const requireLogin = () => {
   return false
 }
 
-// 预约课程
+// 报名课程
+const handleEnrollCourse = () => {
+  if (requireLogin()) return
+  router.push('/member/courses')
+}
+
+// 预约教练
 const handleBookCourse = () => {
   if (requireLogin()) return
-  console.log('📅 预约课程')
   router.push('/member/coach-booking')
 }
 
-// 购买卡券
-const handleBuyCard = () => {
-  if (requireLogin()) return
-  console.log('🎫 购买卡券')
-  ElMessage.info('购买卡券功能开发中...')
+// 查看公告
+const handleViewAnnouncements = () => {
+  router.push('/member/announcements')
 }
 
-// 扫码入场
-const handleScanEntry = () => {
-  if (requireLogin()) return
-  console.log('📱 扫码入场')
-  ElMessage.info('扫码入场功能开发中...')
+// 查看所有公告
+const handleViewAllAnnouncements = () => {
+  router.push('/member/announcements')
 }
 
-// 联系客服
-const handleContactService = () => {
-  if (requireLogin()) return
-  console.log('🎧 联系客服')
-  ElMessage.info('联系客服功能开发中...')
+// 查看公告详情
+const handleViewAnnouncementDetail = async (item: any) => {
+  try {
+    const res = await request({
+      url: `/member/announcements/${item.id}`,
+      method: 'get'
+    })
+    
+    let detailData = item
+    if (res && typeof res === 'object') {
+      const resData = res as any
+      if (resData.code === 200 && resData.data) {
+        detailData = resData.data
+      }
+    }
+    
+    // 跳转到详情页或打开对话框（这里简单处理，直接跳转）
+    ElMessage.info(`查看公告：${detailData.title}`)
+  } catch (error: any) {
+    console.error('加载公告详情失败:', error)
+  }
 }
 
-// 查看个人信息
-const handleViewProfile = () => {
+// 个人中心
+const handleMyProfile = () => {
   if (requireLogin()) return
-  console.log('👤 查看个人信息')
   router.push('/member')
 }
 
-// 修改密码
-const handleChangePassword = () => {
+// 查看所有预约
+const handleViewAllAppointments = () => {
   if (requireLogin()) return
-  console.log('🔒 修改密码')
   router.push('/member')
-  // 可以通过路由参数或状态管理来直接打开修改密码对话框
-  setTimeout(() => {
-    // 触发MemberView中的修改密码对话框
-    const event = new CustomEvent('open-password-dialog')
-    window.dispatchEvent(event)
-  }, 100)
 }
 
-// 我的预约
-const handleMyBooking = () => {
+// 查看预约详情
+const handleViewAppointmentDetail = (item: any) => {
   if (requireLogin()) return
-  console.log('📋 我的预约')
+  ElMessage.info(`查看预约：${item.appointmentNo}`)
+  // 可以跳转到详情页或在MemberView中打开对话框
   router.push('/member')
+}
+
+// 获取最近预约
+const loadRecentAppointments = async () => {
+  if (isGuest.value || !userStore.userId) {
+    return
+  }
+  
+  loading.value = true
+  try {
+    const res = await request({
+      url: `/member/appointments/my`,
+      method: 'get',
+      params: { page: 1, size: 5 }
+    })
+    
+    let dataList = []
+    if (Array.isArray(res)) {
+      dataList = res
+    } else if (res && typeof res === 'object') {
+      const resData = res as any
+      if (resData.code === 200) {
+        const data = resData.data
+        if (Array.isArray(data)) {
+          dataList = data
+        } else if (data && Array.isArray(data.records)) {
+          dataList = data.records
+        } else if (data && Array.isArray(data.list)) {
+          dataList = data.list
+        }
+      }
+    }
+    
+    // 只取最近的5条
+    recentAppointments.value = dataList.slice(0, 5)
+  } catch (error: any) {
+    console.error('加载预约列表失败:', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取最新公告
+const loadRecentAnnouncements = async () => {
+  loadingAnnouncements.value = true
+  try {
+    const res = await request({
+      url: '/member/announcements',
+      method: 'get',
+      params: { page: 1, size: 5, expiredStatus: 0 }
+    })
+    
+    let dataList = []
+    if (Array.isArray(res)) {
+      dataList = res
+    } else if (res && typeof res === 'object') {
+      const resData = res as any
+      if (resData.code === 200) {
+        const data = resData.data
+        if (Array.isArray(data)) {
+          dataList = data
+        } else if (data && Array.isArray(data.records)) {
+          dataList = data.records
+        } else if (data && Array.isArray(data.list)) {
+          dataList = data.list
+        }
+      }
+    }
+    
+    // 只取最近的5条
+    recentAnnouncements.value = dataList.slice(0, 5)
+  } catch (error: any) {
+    console.error('加载公告列表失败:', error)
+  } finally {
+    loadingAnnouncements.value = false
+  }
+}
+
+// 工具函数
+const getAppointmentStatusType = (status: number) => {
+  const types: Record<number, string> = {
+    0: 'warning',
+    1: 'success',
+    2: 'success',
+    3: 'info',
+    4: 'danger'
+  }
+  return types[status] || 'info'
+}
+
+const getAppointmentStatusText = (status: number) => {
+  const texts: Record<number, string> = {
+    0: '待确认',
+    1: '已确认',
+    2: '已完成',
+    3: '已取消',
+    4: '已爽约'
+  }
+  return texts[status] || '未知'
+}
+
+const getPriorityText = (priority: number) => {
+  const texts: Record<number, string> = {
+    1: '普通',
+    2: '重要',
+    3: '紧急'
+  }
+  return texts[priority] || '普通'
+}
+
+const getPriorityType = (priority: number) => {
+  const types: Record<number, string> = {
+    1: 'info',
+    2: 'warning',
+    3: 'danger'
+  }
+  return types[priority] || 'info'
+}
+
+const formatTime = (timeStr: string) => {
+  if (!timeStr) return '—'
+  const date = new Date(timeStr)
+  return date.toLocaleString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '—'
+  const date = new Date(dateStr)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
 }
 
 // 退出登录
@@ -314,7 +407,6 @@ const handleLogout = () => {
     }
   )
     .then(() => {
-      console.log('🚪 退出登录')
       // 清除所有本地存储
       localStorage.clear()
       sessionStorage.clear()
@@ -334,16 +426,16 @@ const handleLogout = () => {
 
 // 跳转到登录页
 const handleLogin = () => {
-  console.log('🔑 跳转登录页')
   router.push('/login')
 }
 
-// 查看公告
-const handleViewAnnouncements = () => {
-  if (requireLogin()) return
-  console.log('📢 查看公告')
-  router.push('/member/announcements')
-}
+// 页面加载时获取数据
+onMounted(() => {
+  if (!isGuest.value) {
+    loadRecentAppointments()
+  }
+  loadRecentAnnouncements()
+})
 
 </script>
 
@@ -446,84 +538,6 @@ const handleViewAnnouncements = () => {
   font-weight: 400;
 }
 
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 28px 24px;
-  border-radius: 16px;
-  border: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: white;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  animation: fadeInUp 0.6s cubic-bezier(0.4, 0, 0.2, 1) backwards;
-}
-
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-.stat-card:nth-child(4) { animation-delay: 0.4s; }
-
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.stat-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-}
-
-.stat-icon {
-  width: 88px;
-  height: 88px;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  margin-right: 24px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  position: relative;
-  overflow: hidden;
-}
-
-.stat-icon::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 100%;
-  height: 100%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.3) 0%, transparent 70%);
-}
-
-.stat-info {
-  flex: 1;
-}
-
-.stat-value {
-  font-size: 36px;
-  font-weight: 700;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 8px;
-  letter-spacing: -1px;
-}
-
-.stat-label {
-  font-size: 15px;
-  color: #909399;
-  font-weight: 500;
-}
-
 .section-card {
   margin-bottom: 24px;
   border-radius: 18px;
@@ -535,6 +549,17 @@ const handleViewAnnouncements = () => {
 
 .section-card:hover {
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .card-header {
@@ -570,17 +595,100 @@ const handleViewAnnouncements = () => {
   transform: translateY(-1px);
 }
 
-.section-card :deep(.el-timeline) {
-  padding-left: 8px;
+/* 预约列表样式 */
+.appointment-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
 }
 
-.section-card :deep(.el-timeline-item__timestamp) {
+.appointment-item {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.appointment-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.appointment-info {
+  padding: 8px 0;
+}
+
+.appointment-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.appointment-no {
+  font-size: 14px;
+  color: #606266;
+  font-weight: 500;
+}
+
+.appointment-detail p {
+  margin: 6px 0;
+  font-size: 14px;
+  color: #909399;
+}
+
+.appointment-detail strong {
+  color: #303133;
+}
+
+/* 公告列表样式 */
+.announcement-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.announcement-item {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.announcement-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.announcement-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.announcement-title {
+  margin: 0;
+  font-size: 16px;
+  color: #303133;
   font-weight: 600;
-  color: #667eea;
+  flex: 1;
 }
 
-.section-card :deep(.el-card__body) {
-  padding: 20px;
+.announcement-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 8px;
+  border-top: 1px solid #EBEEF5;
+}
+
+.publish-time {
+  color: #909399;
+  font-size: 13px;
+}
+
+/* 空状态和加载状态 */
+.guest-tip,
+.loading-tip,
+.empty-tip {
+  padding: 20px 0;
 }
 
 /* 响应式设计 */
@@ -599,8 +707,8 @@ const handleViewAnnouncements = () => {
     font-size: 26px;
   }
   
-  .stat-value {
-    font-size: 28px;
+  .appointment-list {
+    grid-template-columns: 1fr;
   }
 }
 </style>

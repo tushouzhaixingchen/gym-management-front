@@ -1,274 +1,24 @@
 <template>
   <div class="dashboard">
-    <!-- 欢迎标语 -->
-    <div class="welcome-section">
-      <h2>👋 欢迎回来，{{ userName }}！</h2>
-      <p class="subtitle">今天是 {{ currentDate }}，祝您工作愉快！</p>
+    <!-- 欢迎区域 -->
+    <div class="welcome-container">
+      <div class="welcome-content">
+        <h1 class="welcome-title">👋 欢迎回来，{{ userName }}！</h1>
+        <p class="welcome-subtitle">{{ currentDate }}</p>
+        <p class="welcome-message">祝您工作愉快，管理顺利！</p>
+      </div>
     </div>
-
-    <!-- 数据统计卡片 -->
-    <el-row :gutter="20" class="stat-row">
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
-            <el-icon :size="36"><User /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">总会员数</div>
-            <div class="stat-value">1,234</div>
-            <div class="stat-trend">
-              <span class="trend-up">↑ 12%</span>
-              <span class="trend-text">较上月</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
-            <el-icon :size="36"><UserFilled /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">今日入场</div>
-            <div class="stat-value">567</div>
-            <div class="stat-trend">
-              <span class="trend-up">↑ 8%</span>
-              <span class="trend-text">较昨日</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
-            <el-icon :size="36"><Calendar /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">今日课程</div>
-            <div class="stat-value">89</div>
-            <div class="stat-trend">
-              <span class="trend-text">共 12 位教练</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-      
-      <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
-            <el-icon :size="36"><Bell /></el-icon>
-          </div>
-          <div class="stat-content">
-            <div class="stat-label">待处理事项</div>
-            <div class="stat-value">12</div>
-            <div class="stat-trend">
-              <span class="trend-down">↓ 3%</span>
-              <span class="trend-text">较上周</span>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 图表和待办事项 -->
-    <el-row :gutter="20" class="chart-row">
-      <!-- 左侧：收入趋势图 -->
-      <el-col :span="16">
-        <el-card shadow="hover" class="chart-card">
-          <template #header>
-            <div class="card-header">
-              <h4>📊 本周收入趋势</h4>
-              <el-radio-group v-model="chartPeriod" size="small">
-                <el-radio-button value="week">本周</el-radio-button>
-                <el-radio-button value="month">本月</el-radio-button>
-              </el-radio-group>
-            </div>
-          </template>
-          <div class="chart-container">
-            <div class="chart-placeholder">
-              <div class="bar-chart">
-                <div class="bar" style="height: 60%;"><span>周一<br/>¥8,234</span></div>
-                <div class="bar" style="height: 80%;"><span>周二<br/>¥12,456</span></div>
-                <div class="bar" style="height: 70%;"><span>周三<br/>¥10,123</span></div>
-                <div class="bar" style="height: 90%;"><span>周四<br/>¥15,678</span></div>
-                <div class="bar" style="height: 75%;"><span>周五<br/>¥11,234</span></div>
-                <div class="bar" style="height: 50%;"><span>周六<br/>¥6,789</span></div>
-                <div class="bar" style="height: 40%;"><span>周日<br/>¥5,432</span></div>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-
-      <!-- 右侧：待办事项 -->
-      <el-col :span="8">
-        <el-card shadow="hover" class="todo-card">
-          <template #header>
-            <div class="card-header">
-              <h4>📝 待办事项</h4>
-              <el-button type="primary" size="small" icon="Plus">新增</el-button>
-            </div>
-          </template>
-          <el-timeline class="todo-timeline">
-            <el-timeline-item timestamp="09:00" placement="top" type="danger">
-              <div class="todo-item">
-                <div class="todo-content">
-                  <div class="todo-title">会员合同到期提醒</div>
-                  <div class="todo-desc">张三等 5 位会员合同即将到期</div>
-                </div>
-              </div>
-            </el-timeline-item>
-            <el-timeline-item timestamp="10:30" placement="top" type="warning">
-              <div class="todo-item">
-                <div class="todo-content">
-                  <div class="todo-title">器械维护检查</div>
-                  <div class="todo-desc">跑步机 #003 需要定期维护</div>
-                </div>
-              </div>
-            </el-timeline-item>
-            <el-timeline-item timestamp="14:00" placement="top" type="primary">
-              <div class="todo-item">
-                <div class="todo-content">
-                  <div class="todo-title">新员工培训</div>
-                  <div class="todo-desc">前台接待员入职培训</div>
-                </div>
-              </div>
-            </el-timeline-item>
-            <el-timeline-item timestamp="16:00" placement="top" type="success">
-              <div class="todo-item">
-                <div class="todo-content">
-                  <div class="todo-title">会员回访</div>
-                  <div class="todo-desc">回访 3 位新办卡会员</div>
-                </div>
-              </div>
-            </el-timeline-item>
-          </el-timeline>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 快捷操作和最近动态 -->
-    <el-row :gutter="20">
-      <!-- 快捷操作 -->
-      <el-col :span="12">
-        <el-card shadow="hover" class="quick-actions-card">
-          <template #header>
-            <div class="card-header">
-              <h4>⚡ 快捷操作</h4>
-            </div>
-          </template>
-          <el-row :gutter="16">
-            <el-col :span="12">
-              <div class="action-btn">
-                <el-button type="primary" circle class="action-icon">
-                  <el-icon><User /></el-icon>
-                </el-button>
-                <div class="action-text">新增会员</div>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="action-btn">
-                <el-button type="success" circle class="action-icon">
-                  <el-icon><Calendar /></el-icon>
-                </el-button>
-                <div class="action-text">新增课程</div>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="action-btn">
-                <el-button type="warning" circle class="action-icon">
-                  <el-icon><Bell /></el-icon>
-                </el-button>
-                <div class="action-text">发布公告</div>
-              </div>
-            </el-col>
-            <el-col :span="12">
-              <div class="action-btn">
-                <el-button type="info" circle class="action-icon">
-                  <el-icon><DataAnalysis /></el-icon>
-                </el-button>
-                <div class="action-text">查看报表</div>
-              </div>
-            </el-col>
-          </el-row>
-        </el-card>
-      </el-col>
-
-      <!-- 最近动态 -->
-      <el-col :span="12">
-        <el-card shadow="hover" class="activity-card">
-          <template #header>
-            <div class="card-header">
-              <h4>🔔 最近动态</h4>
-              <el-button size="small">查看全部</el-button>
-            </div>
-          </template>
-          <div class="activity-list">
-            <div class="activity-item">
-              <div class="activity-icon" style="background: #67C23A;">
-                <el-icon><User /></el-icon>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">新会员注册</div>
-                <div class="activity-desc">张三 办理了年卡会员卡</div>
-                <div class="activity-time">10 分钟前</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon" style="background: #409EFF;">
-                <el-icon><Calendar /></el-icon>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">课程预约</div>
-                <div class="activity-desc">李四 预约了瑜伽课程</div>
-                <div class="activity-time">25 分钟前</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon" style="background: #E6A23C;">
-                <el-icon><Setting /></el-icon>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">器械维护</div>
-                <div class="activity-desc">跑步机 #003 完成维护</div>
-                <div class="activity-time">1 小时前</div>
-              </div>
-            </div>
-            <div class="activity-item">
-              <div class="activity-icon" style="background: #F56C6C;">
-                <el-icon><Bell /></el-icon>
-              </div>
-              <div class="activity-content">
-                <div class="activity-title">系统通知</div>
-                <div class="activity-desc">系统将于今晚 22:00 进行维护</div>
-                <div class="activity-time">2 小时前</div>
-              </div>
-            </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
-import { 
-  User, UserFilled, Calendar, Bell, DataAnalysis, 
-  Setting, Plus 
-} from '@element-plus/icons-vue'
-
-// 🔴 调试日志：组件开始加载
-console.log('🔴 [DashboardView] 组件开始加载')
 
 const userStore = useUserStore()
+
 const userName = computed(() => {
-  const name = userStore.name || '管理员'
-  console.log('🔵 [DashboardView] userName:', name)
-  return name
+  return userStore.name || '管理员'
 })
 
 const currentDate = computed(() => {
@@ -278,312 +28,174 @@ const currentDate = computed(() => {
   const day = String(now.getDate()).padStart(2, '0')
   const weekDays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六']
   const weekDay = weekDays[now.getDay()]
-  const dateStr = `${year}年${month}月${day}日 ${weekDay}`
-  console.log(' [DashboardView] currentDate:', dateStr)
-  return dateStr
+  const hours = String(now.getHours()).padStart(2, '0')
+  const minutes = String(now.getMinutes()).padStart(2, '0')
+  return `${year}年${month}月${day}日 ${weekDay} ${hours}:${minutes}`
 })
 
-const chartPeriod = ref('week')
-
-// 🔴 组件挂载时的日志
 onMounted(() => {
-  console.log('✅ [DashboardView] 组件已挂载到页面')
-  console.log('✅ [DashboardView] userName:', userName.value)
-  console.log('✅ [DashboardView] currentDate:', currentDate.value)
-  console.log('✅ [DashboardView] chartPeriod:', chartPeriod.value)
+  console.log('✅ DashboardView 组件已挂载')
 })
 </script>
 
 <style scoped>
 .dashboard {
-  padding: 0;
-}
-
-.welcome-section {
-  margin-bottom: 24px;
-}
-
-.welcome-section h2 {
-  font-size: 24px;
-  color: #303133;
-  margin: 0 0 8px 0;
-}
-
-.welcome-section .subtitle {
-  font-size: 14px;
-  color: #909399;
-  margin: 0;
-}
-
-.stat-row {
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  display: flex;
-  align-items: center;
-  padding: 20px;
-  border: none;
-}
-
-.stat-icon {
-  width: 90px;
-  height: 90px;
-  border-radius: 16px;
+  min-height: calc(100vh - 60px);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  margin-right: 20px;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.stat-content {
-  flex: 1;
-}
-
-.stat-label {
-  font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 36px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 8px;
-  line-height: 1;
-}
-
-.stat-trend {
-  display: flex;
-  gap: 8px;
-  font-size: 12px;
-}
-
-.trend-up {
-  color: #67C23A;
-  font-weight: 600;
-}
-
-.trend-down {
-  color: #F56C6C;
-  font-weight: 600;
-}
-
-.trend-text {
-  color: #909399;
-}
-
-.chart-row {
-  margin-bottom: 20px;
-}
-
-.chart-card,
-.todo-card,
-.quick-actions-card,
-.activity-card {
-  border: none;
-}
-
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.card-header h4 {
-  margin: 0;
-  font-size: 16px;
-  color: #303133;
-  font-weight: 600;
-}
-
-.chart-container {
-  height: 300px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.chart-placeholder {
-  width: 100%;
-  height: 100%;
-}
-
-.bar-chart {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-around;
-  height: 250px;
-  padding: 20px;
-  gap: 12px;
-}
-
-.bar {
-  flex: 1;
-  background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-  border-radius: 8px 8px 0 0;
-  min-height: 40px;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 8px;
-  transition: all 0.3s ease;
+  background-image: url('@/resources/images/dashboard.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   position: relative;
+  overflow: hidden;
 }
 
-.bar:hover {
-  transform: scaleY(1.05);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+/* 背景遮罩层 */
+.dashboard::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.3) 0%, rgba(118, 75, 162, 0.3) 50%, rgba(240, 147, 251, 0.3) 100%);
+  z-index: 0;
 }
 
-.bar span {
-  color: white;
-  font-size: 12px;
-  text-align: center;
-  line-height: 1.4;
-  white-space: nowrap;
-}
-
-.todo-timeline {
-  padding: 10px 0;
-}
-
-.todo-item {
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 12px;
-  margin-top: 8px;
-}
-
-.todo-content {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.todo-title {
-  font-size: 14px;
-  color: #303133;
-  font-weight: 600;
-}
-
-.todo-desc {
-  font-size: 12px;
-  color: #909399;
-}
-
-.quick-actions-card {
-  height: 100%;
-}
-
-.action-btn {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px 10px;
-  gap: 12px;
-  transition: all 0.3s ease;
-  border-radius: 8px;
-}
-
-.action-btn:hover {
-  background: #f5f7fa;
-}
-
-.action-icon {
-  width: 60px;
-  height: 60px;
-  font-size: 24px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.action-text {
-  font-size: 14px;
-  color: #606266;
-  text-align: center;
-}
-
-.activity-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.activity-item {
-  display: flex;
-  gap: 12px;
-  padding: 12px;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.activity-item:hover {
-  background: #f5f7fa;
-}
-
-.activity-icon {
-  width: 40px;
-  height: 40px;
+/* 背景装饰球 */
+.dashboard::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -20%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
   border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
+  animation: float 20s infinite ease-in-out;
+  z-index: 0;
 }
 
-.activity-content {
-  flex: 1;
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(30px, -30px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.9);
+  }
+}
+
+.welcome-container {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 60px 40px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  border-radius: 30px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+              inset 0 0 60px rgba(255, 255, 255, 0.1);
+  max-width: 800px;
+  width: 90%;
+  animation: slideIn 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-40px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.welcome-content {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 20px;
 }
 
-.activity-title {
-  font-size: 14px;
-  color: #303133;
+.welcome-title {
+  font-size: 56px;
+  font-weight: 900;
+  color: white;
+  margin: 0;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.3),
+               0 0 40px rgba(255, 255, 255, 0.3);
+  letter-spacing: -1px;
+  line-height: 1.2;
+  animation: titlePulse 2s infinite ease-in-out;
+}
+
+@keyframes titlePulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+.welcome-subtitle {
+  font-size: 28px;
   font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  margin: 0;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  letter-spacing: 1px;
 }
 
-.activity-desc {
-  font-size: 12px;
-  color: #909399;
-}
-
-.activity-time {
-  font-size: 11px;
-  color: #C0C4CC;
-  margin-top: 4px;
+.welcome-message {
+  font-size: 22px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  margin: 0;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  font-style: italic;
 }
 
 /* 响应式设计 */
-@media (max-width: 1200px) {
-  .stat-value {
-    font-size: 28px;
+@media (max-width: 768px) {
+  .welcome-container {
+    padding: 40px 30px;
   }
   
-  .stat-icon {
-    width: 70px;
-    height: 70px;
+  .welcome-title {
+    font-size: 42px;
+  }
+  
+  .welcome-subtitle {
+    font-size: 22px;
+  }
+  
+  .welcome-message {
+    font-size: 18px;
   }
 }
 
-@media (max-width: 768px) {
-  .stat-card {
-    margin-bottom: 16px;
+@media (max-width: 480px) {
+  .welcome-container {
+    padding: 30px 20px;
   }
   
-  .bar-chart {
-    height: 180px;
+  .welcome-title {
+    font-size: 32px;
   }
   
-  .bar span {
-    font-size: 10px;
+  .welcome-subtitle {
+    font-size: 18px;
+  }
+  
+  .welcome-message {
+    font-size: 16px;
   }
 }
 </style>
