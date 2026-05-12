@@ -36,26 +36,32 @@
         </div>
       </template>
       <el-row :gutter="20">
-        <el-col :span="6">
+        <el-col :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
           <el-button type="primary" style="width: 100%;" size="large" @click="handleEnrollCourse">
             <el-icon><Calendar /></el-icon>
             报名课程
           </el-button>
         </el-col>
-        <el-col :span="6">
-          <el-button type="success" style="width: 100%;" size="large" @click="handleBookCourse">
+        <el-col :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
+          <el-button type="success" style="width: 100%;" size="large" @click="handleMyCourses">
+            <el-icon><List /></el-icon>
+            我的课程
+          </el-button>
+        </el-col>
+        <el-col :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
+          <el-button type="warning" style="width: 100%;" size="large" @click="handleBookCourse">
             <el-icon><VideoCamera /></el-icon>
             预约教练
           </el-button>
         </el-col>
-        <el-col :span="6">
-          <el-button type="warning" style="width: 100%;" size="large" @click="handleViewAnnouncements">
+        <el-col :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
+          <el-button type="info" style="width: 100%;" size="large" @click="handleViewAnnouncements">
             <el-icon><Bell /></el-icon>
             查看公告
           </el-button>
         </el-col>
-        <el-col :span="6">
-          <el-button type="info" style="width: 100%;" size="large" @click="handleMyProfile">
+        <el-col :xs="12" :sm="8" :md="6" :lg="4" :xl="4">
+          <el-button type="default" style="width: 100%;" size="large" @click="handleMyProfile">
             <el-icon><User /></el-icon>
             个人中心
           </el-button>
@@ -150,7 +156,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { 
-  Calendar, Bell, User, SwitchButton, VideoCamera
+  Calendar, Bell, User, SwitchButton, VideoCamera, List
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import request from '@/utils/request'
@@ -196,6 +202,12 @@ const requireLogin = () => {
 const handleEnrollCourse = () => {
   if (requireLogin()) return
   router.push('/member/courses')
+}
+
+// 我的课程
+const handleMyCourses = () => {
+  if (requireLogin()) return
+  router.push('/member/my-courses')
 }
 
 // 预约教练

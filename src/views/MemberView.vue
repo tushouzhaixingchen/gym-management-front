@@ -36,8 +36,8 @@
       <el-col :span="8">
         <el-card shadow="hover" class="action-card" @click="handleBookCourse">
           <el-icon :size="40" color="#67C23A"><Calendar /></el-icon>
-          <h3>课程预约</h3>
-          <p>预约健身课程</p>
+          <h3>预约教练</h3>
+          <p>预约私人教练</p>
         </el-card>
       </el-col>
       <el-col :span="8">

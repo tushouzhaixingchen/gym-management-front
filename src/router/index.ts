@@ -101,6 +101,12 @@ const routes: Array<RouteRecordRaw> = [
     meta: { title: '报名课程', requiresAuth: true, roles: ['MEMBER'] }
   },
   {
+    path: '/member/my-courses',
+    name: 'MyCourses',
+    component: () => import('@/views/MyCourseView.vue'),
+    meta: { title: '我的课程', requiresAuth: true, roles: ['MEMBER'] }
+  },
+  {
     path: '/member/orders',
     name: 'OrderManage',
     component: () => import('@/views/OrderManageView.vue'),
