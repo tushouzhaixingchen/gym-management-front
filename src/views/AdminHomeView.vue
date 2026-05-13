@@ -165,7 +165,7 @@ const handleRefresh = () => {
 
 const handleLogout = async () => {
   try {
-    userStore.logout()
+    userStore.logout('ADMIN')
     router.push('/login')
   } catch (error) {
     console.error('退出失败:', error)

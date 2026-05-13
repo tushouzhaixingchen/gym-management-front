@@ -69,6 +69,7 @@ import { ElMessage } from 'element-plus'
 import { Lock } from '@element-plus/icons-vue'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
+import { getMemberLastPassword } from '@/utils/authSession'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -83,7 +84,7 @@ const form = ref({
 
 // 🔧 页面加载时自动填充旧密码
 onMounted(() => {
-  const lastPassword = localStorage.getItem('lastPassword')
+  const lastPassword = getMemberLastPassword()
   if (lastPassword) {
     console.log('🔑 自动填充旧密码:', '*'.repeat(lastPassword.length))
   }
@@ -118,8 +119,8 @@ const handleSubmit = async () => {
     loading.value = true
     
     try {
-      // 🔧 从 localStorage 获取登录时保存的密码
-      const lastPassword = localStorage.getItem('lastPassword') || ''
+      // 🔧 从 sessionStorage 获取登录时保存的密码
+      const lastPassword = getMemberLastPassword() || ''
       
       const requestData = {
         oldPassword: lastPassword,  // 使用登录时的密码
@@ -167,7 +168,7 @@ const handleSubmit = async () => {
         const accountName = userStore.name
         
         // 清除登录状态
-        userStore.logout()
+        userStore.logout('MEMBER')
         
         // 延迟跳转，让用户看到成功提示
         setTimeout(() => {

@@ -76,6 +76,7 @@ import { useRouter, useRoute } from 'vue-router';
 import { loginApi } from '@/utils/request';
 import type { LoginData } from '@/utils/request';
 import { useUserStore } from '@/stores/user';
+import { writeAuthSession, parseLoginSuccessPayload, inferLoginBucketRole, readAuthSession } from '@/utils/authSession';
 import { ElMessage } from 'element-plus';
 
 const router = useRouter();
@@ -137,114 +138,103 @@ const handleLogin = async () => {
       }
     }
     
-    if (res.code === 200) {
-      const data = res.data || {};
-      
-      const token = data.token || data.accessToken;
-      const name = data.name || data.username || data.account || data.realName || form.value.account;
-      
-      const userInfo = data.userInfo || data.user || {};
-      const role = userInfo.userType || userInfo.role || userInfo.userRole || data.userType || data.role;
-      const userId = userInfo.id || data.userId || data.id || data.adminId;
-      const storeId = userInfo.storeId || data.storeId;  // ✅ 提取 storeId
-      const storeName = userInfo.storeName || data.storeName;  // ✅ 提取 storeName
+    if (res.code === 200 || res.code === '200') {
+      const { token, userInfo: apiUser, data } = parseLoginSuccessPayload(res);
+      if (!token) {
+        errorMsg.value = '登录成功但未返回 token，请检查接口或联系管理员';
+        ElMessage.error(errorMsg.value);
+        return;
+      }
+
+      const name =
+        (data as any).name ||
+        (data as any).username ||
+        (data as any).account ||
+        (data as any).realName ||
+        apiUser.realName ||
+        apiUser.account ||
+        form.value.account;
+
+      const userInfoObj = Object.keys(apiUser).length ? apiUser : (data as any);
+      const bucketRole = inferLoginBucketRole(
+        userInfoObj as Record<string, any>,
+        data as Record<string, any>,
+        form.value.account
+      );
+
+      const role =
+        userInfoObj.userType ||
+        userInfoObj.role ||
+        userInfoObj.userRole ||
+        (data as any).userType ||
+        (data as any).role;
+      const userId = userInfoObj.id || (data as any).userId || (data as any).id || (data as any).adminId;
+      const storeId = userInfoObj.storeId || (data as any).storeId;
+      const storeName = userInfoObj.storeName || (data as any).storeName;
       
       console.log(' 解析用户信息:');
       console.log('  - token:', token ? '✅ 存在' : '❌ 不存在');
       console.log('  - name:', name);
-      console.log('  - userInfo:', userInfo);
-      console.log('  - 原始 role:', role);
+      console.log('  - userInfo:', userInfoObj);
+      console.log('  - 原始 role 字段:', role);
       console.log('  - userId:', userId);
       console.log('  - storeId:', storeId);
       console.log('  - storeName:', storeName);
+      console.log('  - 分桶角色 bucketRole:', bucketRole);
       
       // 🔧 检查是否需要强制修改初始密码
-      const forceChangePassword = data.forceChangePassword
+      const forceChangePassword =
+        (data as any).forceChangePassword ?? (res as any).forceChangePassword
       
       console.log('🔐 强制修改密码标识 (forceChangePassword):', forceChangePassword)
       console.log('  - 类型:', typeof forceChangePassword)
       console.log('  - 值:', forceChangePassword)
       console.log('  - 是否为 true:', forceChangePassword === true)
       
-      let finalRole = role;
-      if (!finalRole) {
-        const account = form.value.account;
-        if (account.toLowerCase().includes('admin')) {
-          finalRole = 'ADMIN';
-          console.log('  ⚠️ 未检测到 role，根据账号推断为 ADMIN');
-        } else {
-          finalRole = 'MEMBER';
-          console.log('  ⚠️ 未检测到 role，根据账号推断为 MEMBER');
-        }
-      } else {
-        finalRole = finalRole.toUpperCase();
-        console.log('  ✅ role 转为大写:', finalRole);
-      }
-      
-      userStore.token = token;
-      userStore.name = name;
-      userStore.role = finalRole;
-      if (userId) {
-        userStore.userId = userId;
-      }
-      
-      // 🔧 关键修复：先清除所有旧数据
-      console.log(' 清除旧数据...')
-      localStorage.removeItem('token')
-      localStorage.removeItem('name')
-      localStorage.removeItem('role')
-      localStorage.removeItem('userId')
-      localStorage.removeItem('storeId')
-      localStorage.removeItem('storeName')
-      
-      // 🔧 处理 storeId：超级管理员为 null/undefined，普通管理员有值
-      if (storeId !== null && storeId !== undefined && storeId !== 0) {
-        userStore.storeId = storeId
-        localStorage.setItem('storeId', String(storeId))
-        console.log('✅ 普通管理员，已存储 storeId:', storeId)
-      } else {
-        userStore.storeId = undefined
-        console.log('✅ 超级管理员，已清除 storeId')
-      }
-      
-      if (storeName) {
-        userStore.storeName = storeName
-        localStorage.setItem('storeName', storeName)
-      } else {
-        userStore.storeName = undefined
-      }
-      
-      localStorage.setItem('token', token)
-      localStorage.setItem('name', name)
-      localStorage.setItem('role', finalRole)
-      if (userId) {
-        localStorage.setItem('userId', String(userId))
-      }
-      
-      // 🔧 保存密码（用于初始密码修改时自动填充）
-      localStorage.setItem('lastPassword', form.value.password)
+      const sessionPayload: Parameters<typeof writeAuthSession>[1] = {
+        token,
+        name,
+        role: bucketRole,
+        storeId:
+          storeId !== null && storeId !== undefined && storeId !== 0 ? storeId : null,
+        storeName: storeName || '',
+      };
+      if (userId != null) sessionPayload.userId = userId;
+      if (bucketRole === 'MEMBER') sessionPayload.lastPassword = form.value.password;
+      writeAuthSession(bucketRole, sessionPayload);
 
-      console.log('💾 存储到 localStorage:');
-      console.log('  - token:', token ? '✅' : '❌');
+      const verifySnap = readAuthSession(bucketRole);
+      if (!verifySnap?.token) {
+        errorMsg.value = '登录态未能写入本地（请检查是否禁用 localStorage 或存储已满）';
+        ElMessage.error(errorMsg.value);
+        console.error('❌ writeAuthSession 后读回失败', { bucketRole, verifySnap });
+        return;
+      }
+
+      userStore.hydrateFromPath(
+        bucketRole === 'ADMIN' ? '/admin/home' : '/member/home'
+      );
+
+      console.log('💾 已写入分桶 localStorage:', bucketRole);
+      console.log('  - token 读回:', verifySnap.token ? '✅' : '❌');
       console.log('  - name:', name);
-      console.log('  - role:', finalRole);
+      console.log('  - role:', bucketRole);
       console.log('  - userId:', userId);
       console.log('  - storeId:', userStore.storeId);
       console.log('  - storeName:', userStore.storeName);
-      console.log('  - lastPassword:', '✅ 已保存（用于修改密码）');
 
       ElMessage.success('登录成功');
       
-      console.log('🎯 准备跳转，当前角色:', finalRole);
+      console.log('🎯 准备跳转，分桶角色:', bucketRole);
       console.log('🔐 是否需要修改初始密码:', forceChangePassword);
       
       // 🔧 如果是会员且需要强制修改密码，强制跳转到修改密码页面
-      if (finalRole === 'MEMBER' && forceChangePassword === true) {
+      if (bucketRole === 'MEMBER' && forceChangePassword === true) {
         console.log('  → 检测到需要强制修改密码，跳转到修改密码页面');
         router.push({
           path: '/member/change-password'
         });
-      } else if (finalRole === 'ADMIN') {
+      } else if (bucketRole === 'ADMIN') {
         console.log('  → 跳转到管理后台：/admin/home');
         router.push('/admin/home');
       } else {

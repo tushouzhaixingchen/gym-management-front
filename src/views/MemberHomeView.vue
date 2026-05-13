@@ -155,6 +155,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
+import { readAuthSession } from '@/utils/authSession'
 import { 
   Calendar, Bell, User, SwitchButton, VideoCamera, List
 } from '@element-plus/icons-vue'
@@ -164,11 +165,14 @@ import request from '@/utils/request'
 const router = useRouter()
 const userStore = useUserStore()
 
-// 判断是否为游客模式（未登录状态）
-const isGuest = computed(() => !userStore.token)
+// 会员端是否已登录：直接读会员分桶，避免仅依赖 Pinia（多标签 / 路由切换时与 session 不同步）
+const isGuest = computed(() => !readAuthSession('MEMBER')?.token)
 
-// 游客模式显示"游客"，登录模式显示用户名
-const userName = computed(() => isGuest.value ? '游客' : (userStore.name || '会员'))
+// 游客模式显示"游客"，登录模式显示用户名（分桶优先，避免 Pinia 尚未 hydrate）
+const userName = computed(() => {
+  if (isGuest.value) return '游客'
+  return userStore.name || readAuthSession('MEMBER')?.name || '会员'
+})
 
 const currentDate = computed(() => {
   const now = new Date()
@@ -419,12 +423,8 @@ const handleLogout = () => {
     }
   )
     .then(() => {
-      // 清除所有本地存储
-      localStorage.clear()
-      sessionStorage.clear()
-      
-      // 清除用户状态
-      userStore.logout()
+      // 仅清除会员端会话，保留管理端登录状态
+      userStore.logout('MEMBER')
       
       ElMessage.success('退出登录成功')
       

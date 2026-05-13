@@ -338,8 +338,8 @@ const getCurrentUserInfo = async () => {
     console.log('📋 userStore.storeId 类型:', typeof userStore.storeId)
     console.log('📋 userStore.storeName:', userStore.storeName)
     console.log('📋 userStore.role:', userStore.role)
-    console.log('📋 localStorage storeId:', localStorage.getItem('storeId'))
-    console.log('📋 localStorage storeName:', localStorage.getItem('storeName'))
+    console.log('📋 sessionStorage storeId:', sessionStorage.getItem('storeId'))
+    console.log('📋 sessionStorage storeName:', sessionStorage.getItem('storeName'))
     
     // 🔧 简化逻辑：直接使用 userStore 的值
     // userStore 在初始化时已经从 localStorage 读取，登录时也会更新

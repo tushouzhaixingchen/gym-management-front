@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getTokenForRequestPath } from '@/utils/authSession';
 
 const request = axios.create({
   baseURL: '/api', // 代理前缀
@@ -20,7 +21,13 @@ request.interceptors.request.use(
     const isLoginRequest = config.url?.includes('/auth/login') || config.url?.includes('/auth/register');
     
     if (!isLoginRequest) {
-      const token = localStorage.getItem('token');
+      const pathname = typeof window !== 'undefined' ? window.location.pathname : '';
+      const token = getTokenForRequestPath(pathname);
+      if (import.meta.env.DEV) {
+        const ctx =
+          pathname.startsWith('/admin') ? 'ADMIN' : pathname.startsWith('/member') ? 'MEMBER' : '—';
+        console.log('[auth:request]', { pathname, ctx, hasToken: !!token });
+      }
       if (token) {
         config.headers.Authorization = `Bearer ${token}`;
       }

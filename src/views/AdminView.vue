@@ -168,6 +168,7 @@ import { ref, reactive, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { FormInstance, FormRules } from 'element-plus';
 import request from '@/utils/request';
+import { readAuthSession } from '@/utils/authSession';
 
 // 定义 API 响应类型
 interface ApiResponse<T = any> {
@@ -281,9 +282,10 @@ const getAdminList = async () => {
     });
     
     // 获取当前用户信息
-    const token = localStorage.getItem('token');
-    const role = localStorage.getItem('role');
-    const name = localStorage.getItem('name');
+    const adminSnap = readAuthSession('ADMIN');
+    const token = adminSnap?.token;
+    const role = adminSnap?.role;
+    const name = adminSnap?.name;
     
     console.log('👤 当前用户信息:');
     console.log('  - 用户名:', name);

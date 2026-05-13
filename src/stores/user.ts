@@ -1,137 +1,137 @@
 import { defineStore } from 'pinia';
 import request from '@/utils/request';
+import {
+  readAuthSession,
+  writeAuthSession,
+  clearAuthSession,
+  appRoleFromPath,
+  parseLoginSuccessPayload,
+  inferLoginBucketRole,
+} from '@/utils/authSession';
+import type { AuthSessionSnapshot, RoleType } from '@/utils/authSession';
 
-// 定义角色类型
-export type RoleType = 'ADMIN' | 'MEMBER';
+export type { RoleType };
 
-// 定义状态接口
 export interface UserState {
   token: string;
   name: string;
   role: RoleType;
   userId?: number;
-  storeId?: number;  // ✅ 添加 storeId 字段
-  storeName?: string;  // ✅ 添加 storeName 字段
+  storeId?: number;
+  storeName?: string;
+}
+
+function emptyState(): UserState {
+  return {
+    token: '',
+    name: '',
+    role: 'MEMBER',
+    userId: undefined,
+    storeId: undefined,
+    storeName: undefined,
+  };
+}
+
+function applySnapshot(target: UserState, snap: AuthSessionSnapshot) {
+  target.token = snap.token;
+  target.name = snap.name;
+  target.role = snap.role;
+  target.userId = snap.userId;
+  target.storeId = snap.storeId;
+  target.storeName = snap.storeName;
 }
 
 export const useUserStore = defineStore('user', {
-  state: () => ({
-    token: localStorage.getItem('token') || '',
-    name: localStorage.getItem('name') || '',
-    role: localStorage.getItem('role') || 'MEMBER',
-    userId: (() => {
-      const userId = localStorage.getItem('userId')
-      return userId ? Number(userId) : undefined
-    })(),
-    // 🔧 关键修复：从 localStorage 重新读取，解决浏览器回退问题
-    storeId: (() => {
-      const storeIdStr = localStorage.getItem('storeId')
-      if (storeIdStr === null || storeIdStr === 'null') {
-        console.log('🔐 userStore 初始化 - localStorage storeId: null (超级管理员)')
-        return undefined  // 超级管理员
-      }
-      const storeId = Number(storeIdStr)
-      console.log('🔐 userStore 初始化 - localStorage storeId:', storeIdStr, '转换后:', storeId)
-      return storeId
-    })(),
-    storeName: localStorage.getItem('storeName') || undefined
-  }),
+  state: (): UserState => emptyState(),
 
   actions: {
-    async login(userInfo: { account: string; password: string }) {
+    /** 根据当前路由同步 Pinia 中的「当前端」会话（管理端 / 会员端互不覆盖） */
+    hydrateFromPath(path: string) {
+      const ctx = appRoleFromPath(path);
+      if (!ctx) {
+        Object.assign(this, emptyState());
+        return;
+      }
+      const snap = readAuthSession(ctx);
+      if (!snap) {
+        Object.assign(this, emptyState());
+        return;
+      }
+      applySnapshot(this as UserState, snap);
+    },
+
+    async login(credentials: { account: string; password: string }) {
       try {
         const res = await request({
           url: '/auth/login',
           method: 'post',
-          data: userInfo
+          data: credentials,
         });
 
-        if ((res as any).code === 200 && (res as any).data) {
-          // 🔧 关键修复：先清除所有旧数据，再存储新数据
-          console.log('🔐 开始登录，清除旧数据...')
-          localStorage.removeItem('token')
-          localStorage.removeItem('name')
-          localStorage.removeItem('role')
-          localStorage.removeItem('userId')
-          localStorage.removeItem('storeId')
-          localStorage.removeItem('storeName')
+        if ((res as any).code === 200) {
+          const { token, userInfo: apiUser, data } = parseLoginSuccessPayload(res);
+          if (!token) {
+            return Promise.reject(new Error('登录成功但未返回 token，请检查接口数据'));
+          }
 
-          const userData = (res as any).data.userInfo || (res as any).data
-          
-          console.log('🔐 登录响应数据:', (res as any).data)
-          console.log('🔐 解析后的用户数据:', userData)
-          
-          const { token } = (res as any).data
-          const { id, account, realName, userType, roleId, storeId, storeName, avatar } = userData
+          const userData =
+            apiUser && Object.keys(apiUser).length ? apiUser : (data as Record<string, unknown>);
+          const { id, account, realName, storeId, storeName } = userData as {
+            id?: number;
+            account?: string;
+            realName?: string;
+            storeId?: number | null;
+            storeName?: string;
+          };
 
-          this.token = token
-          this.name = realName || account || userInfo.account
-          this.role = userType || 'MEMBER'
-          this.userId = id
-          this.storeId = storeId
-          this.storeName = storeName
+          const r = inferLoginBucketRole(
+            userData as Record<string, any>,
+            data as Record<string, any>,
+            credentials.account
+          );
 
-          console.log('🔐 存储到 userStore:', {
-            token: this.token ? '已设置' : '未设置',
+          this.token = token;
+          this.name = realName || account || credentials.account;
+          this.role = r;
+          this.userId = id;
+          this.storeId =
+            storeId !== null && storeId !== undefined && storeId !== 0 ? storeId : undefined;
+          this.storeName = storeName || undefined;
+
+          const payload: Parameters<typeof writeAuthSession>[1] = {
+            token,
             name: this.name,
-            role: this.role,
-            userId: this.userId,
-            storeId: this.storeId,
-            storeName: this.storeName
-          })
+            role: r,
+            storeId:
+              storeId !== null && storeId !== undefined && storeId !== 0 ? storeId : null,
+            storeName: storeName || '',
+          };
+          if (id != null) payload.userId = id;
+          writeAuthSession(r, payload);
 
-          localStorage.setItem('token', token)
-          localStorage.setItem('name', this.name)
-          localStorage.setItem('role', this.role)
-          if (id) {
-            localStorage.setItem('userId', String(id))
-          }
-          
-          // 🔧 关键修复：超级管理员 storeId 为 null/undefined，普通管理员有值
-          if (storeId !== null && storeId !== undefined && storeId !== 0) {
-            localStorage.setItem('storeId', String(storeId))
-            this.storeId = storeId  // 🔧 同时更新 userStore
-            console.log('✅ 普通管理员，已存储 storeId:', storeId)
-          } else {
-            localStorage.removeItem('storeId')
-            this.storeId = undefined  // 🔧 超级管理员，设置为 undefined
-            console.log('✅ 超级管理员，已清除 storeId (值为:', storeId, ')')
-          }
-          
-          if (storeName) {
-            localStorage.setItem('storeName', storeName)
-            this.storeName = storeName  // 🔧 同时更新 userStore
-          } else {
-            localStorage.removeItem('storeName')
-            this.storeName = undefined  // 🔧 清除 userStore
+          const verify = readAuthSession(r);
+          if (!verify?.token) {
+            return Promise.reject(new Error('登录态未能写入本地 storage'));
           }
 
-          console.log('✅ 登录完成，localStorage 和 userStore 已更新')
-          console.log('📋 最终 userStore.storeId:', this.storeId)
-          console.log('📋 最终 userStore.storeName:', this.storeName)
           return Promise.resolve(res);
-        } else {
-          return Promise.reject(new Error((res as any).message || '登录失败'));
         }
+        return Promise.reject(new Error((res as any).message || '登录失败'));
       } catch (error) {
         console.error('登录出错:', error);
         return Promise.reject(error);
       }
     },
 
-    logout() {
-      this.token = '';
-      this.name = '';
-      this.role = 'MEMBER';
-      this.userId = undefined;
-      this.storeId = undefined;  // ✅ 清除 storeId
-      this.storeName = undefined;  // ✅ 清除 storeName
-      localStorage.removeItem('token');
-      localStorage.removeItem('name');
-      localStorage.removeItem('role');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('storeId');  // ✅ 清除 storeId
-      localStorage.removeItem('storeName');  // ✅ 清除 storeName
-    }
-  }
+    /**
+     * 退出登录。传入角色时只清除该端会话，另一端不受影响。
+     */
+    logout(role?: RoleType) {
+      const path = typeof window !== 'undefined' ? window.location.pathname : '';
+      const inferred = appRoleFromPath(path);
+      const r = role ?? inferred;
+      if (r) clearAuthSession(r);
+      Object.assign(this, emptyState());
+    },
+  },
 });

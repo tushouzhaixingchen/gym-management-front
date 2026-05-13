@@ -1,5 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import type { RouteRecordRaw } from 'vue-router';
+import { authGuardSnapshot } from '@/utils/authSession';
+import { useUserStore } from '@/stores/user';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -145,13 +147,13 @@ router.beforeEach((to, from, next) => {
   
   // 检查是否需要认证
   if (to.meta.requiresAuth) {
-    const token = localStorage.getItem('token');
-    let role = localStorage.getItem('role');
+    const { token, role: storedRole } = authGuardSnapshot(to.path);
+    let role = (storedRole ? String(storedRole).toUpperCase() : '') as string;
     
     console.log('🔍 路由守卫调试信息:');
     console.log('  - 当前路由:', to.path);
     console.log('  - token:', token ? '✅ 存在' : '❌ 不存在');
-    console.log('  - role 原始值:', role);
+    console.log('  - role 原始值:', storedRole);
     
     if (!token) {
       console.log('  - ❌ 未登录，跳转到登录页');
@@ -159,13 +161,11 @@ router.beforeEach((to, from, next) => {
       return;
     }
     
-    // 确保 role 转为大写
-    if (role) {
-      role = role.toUpperCase();
-      console.log('  - role 转换后:', role);
-    } else {
+    if (!role) {
       console.log('  - ⚠️ role 为空，使用默认值 MEMBER');
       role = 'MEMBER';
+    } else {
+      console.log('  - role 转换后:', role);
     }
     
     // 检查角色权限
@@ -192,6 +192,10 @@ router.beforeEach((to, from, next) => {
   
   console.log('  - ✅ 允许通过');
   next();
+});
+
+router.afterEach((to) => {
+  useUserStore().hydrateFromPath(to.path);
 });
 
 export default router;
