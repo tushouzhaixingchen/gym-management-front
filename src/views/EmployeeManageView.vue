@@ -173,8 +173,12 @@
           <el-col :span="12">
             <el-form-item label="门店" prop="storeId">
               <el-select v-model="formData.storeId" placeholder="请选择门店" style="width: 100%">
-                <el-option label="迈格健身 - 朝阳店" :value="1" />
-                <el-option label="迈格健身 - 海淀店" :value="2" />
+                <el-option
+                  v-for="store in storeOptions"
+                  :key="store.id"
+                  :label="store.name"
+                  :value="store.id"
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -283,6 +287,9 @@ const formData = ref({
   baseSalary: 0,
   remark: ''
 })
+
+// 门店选项
+const storeOptions = ref<{ id: number; name: string }[]>([])
 
 // 表单验证规则
 const formRules = {
@@ -477,8 +484,46 @@ const handleDialogClose = () => {
   }
 }
 
-onMounted(() => {
+// 加载门店列表
+const loadStores = async () => {
+  try {
+    const res = await request({
+      url: '/stores',
+      method: 'get'
+    }) as any
+    
+    let dataList: any[] = []
+    if (Array.isArray(res)) {
+      dataList = res
+    } else if (res && typeof res === 'object') {
+      const resData = res as any
+      if (resData.code === 200) {
+        const data = resData.data
+        if (Array.isArray(data)) {
+          dataList = data
+        } else if (data && Array.isArray(data.records)) {
+          dataList = data.records
+        } else if (data && Array.isArray(data.list)) {
+          dataList = data.list
+        } else if (data && Array.isArray(data.items)) {
+          dataList = data.items
+        }
+      }
+    }
+    
+    storeOptions.value = dataList.map((store: any) => ({
+      id: store.id,
+      name: store.storeName || store.name
+    }))
+  } catch (error) {
+    console.error('❌ 加载门店列表失败:', error)
+    storeOptions.value = []
+  }
+}
+
+onMounted(async () => {
   fetchData()
+  await loadStores()
 })
 </script>
 

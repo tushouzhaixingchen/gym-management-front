@@ -239,7 +239,7 @@
                 placeholder="选择发布时间"
                 style="width: 100%"
                 format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DDTHH:mm:ss"
               />
             </el-form-item>
           </el-col>
@@ -251,7 +251,7 @@
                 placeholder="选择过期时间"
                 style="width: 100%"
                 format="YYYY-MM-DD HH:mm:ss"
-                value-format="YYYY-MM-DD HH:mm:ss"
+                value-format="YYYY-MM-DDTHH:mm:ss"
               />
             </el-form-item>
           </el-col>

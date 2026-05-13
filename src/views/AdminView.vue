@@ -503,22 +503,54 @@ const handlePageChange = () => {
   getAdminList();
 };
 
-// 加载角色和门店选项（实际项目中应该调用接口获取）
-const loadOptions = () => {
-  // TODO: 调用角色和门店接口
+const loadOptions = async () => {
   roleOptions.value = [
     { id: 1, name: '超级管理员' },
     { id: 2, name: '普通管理员' }
   ];
-  storeOptions.value = [
-    { id: 1, name: '朝阳店' },
-    { id: 2, name: '海淀店' }
-  ];
+  
+  try {
+    const res = await request({
+      url: '/stores',
+      method: 'get'
+    }) as any;
+    
+    console.log('🏪 门店列表响应:', res);
+    
+    let dataList: any[] = [];
+    if (Array.isArray(res)) {
+      dataList = res;
+    } else if (res && typeof res === 'object') {
+      const resData = res as any;
+      if (resData.code === 200) {
+        const data = resData.data;
+        if (Array.isArray(data)) {
+          dataList = data;
+        } else if (data && Array.isArray(data.records)) {
+          dataList = data.records;
+        } else if (data && Array.isArray(data.list)) {
+          dataList = data.list;
+        } else if (data && Array.isArray(data.items)) {
+          dataList = data.items;
+        }
+      }
+    }
+    
+    console.log('🏪 门店数量:', dataList.length);
+    
+    storeOptions.value = dataList.map((store: any) => ({
+      id: store.id,
+      name: store.storeName || store.name
+    }));
+  } catch (error) {
+    console.error('❌ 加载门店列表失败:', error);
+    storeOptions.value = [];
+  }
 };
 
-onMounted(() => {
+onMounted(async () => {
   getAdminList();
-  loadOptions();
+  await loadOptions();
 });
 </script>
 

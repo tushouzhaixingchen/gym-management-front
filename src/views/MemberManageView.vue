@@ -132,8 +132,12 @@
         </el-form-item>
         <el-form-item label="注册门店" prop="registerStoreId">
           <el-select v-model="formData.registerStoreId" placeholder="请选择注册门店" style="width: 100%">
-            <el-option label="迈格健身 - 朝阳店" :value="1" />
-            <el-option label="迈格健身 - 海淀店" :value="2" />
+            <el-option
+              v-for="store in storeOptions"
+              :key="store.id"
+              :label="store.name"
+              :value="store.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="备注" prop="remark">
@@ -178,8 +182,12 @@
       <el-form :model="checkInForm" label-width="100px">
         <el-form-item label="签到门店">
           <el-select v-model="checkInForm.storeId" placeholder="请选择门店" style="width: 100%">
-            <el-option label="迈格健身 - 朝阳店" :value="1" />
-            <el-option label="迈格健身 - 海淀店" :value="2" />
+            <el-option
+              v-for="store in storeOptions"
+              :key="store.id"
+              :label="store.name"
+              :value="store.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="签到方式">
@@ -316,6 +324,9 @@ const formRules = {
   gender: [{ required: true, message: '请选择性别', trigger: 'change' }],
   registerStoreId: [{ required: true, message: '请选择注册门店', trigger: 'change' }]
 }
+
+// 门店选项
+const storeOptions = ref<{ id: number; name: string }[]>([])
 
 // 签到对话框
 const checkInDialogVisible = ref(false)
@@ -634,8 +645,50 @@ const copyPassword = async () => {
   }
 }
 
-onMounted(() => {
+// 加载门店列表
+const loadStores = async () => {
+  try {
+    const res = await request({
+      url: '/stores',
+      method: 'get'
+    }) as any
+    
+    console.log('🏪 门店列表响应:', res)
+    
+    let dataList: any[] = []
+    if (Array.isArray(res)) {
+      dataList = res
+    } else if (res && typeof res === 'object') {
+      const resData = res as any
+      if (resData.code === 200) {
+        const data = resData.data
+        if (Array.isArray(data)) {
+          dataList = data
+        } else if (data && Array.isArray(data.records)) {
+          dataList = data.records
+        } else if (data && Array.isArray(data.list)) {
+          dataList = data.list
+        } else if (data && Array.isArray(data.items)) {
+          dataList = data.items
+        }
+      }
+    }
+    
+    console.log('🏪 门店数量:', dataList.length)
+    
+    storeOptions.value = dataList.map((store: any) => ({
+      id: store.id,
+      name: store.storeName || store.name
+    }))
+  } catch (error) {
+    console.error('❌ 加载门店列表失败:', error)
+    storeOptions.value = []
+  }
+}
+
+onMounted(async () => {
   fetchData()
+  await loadStores()
 })
 </script>
 
